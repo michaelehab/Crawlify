@@ -1,0 +1,18 @@
+server:
+  port : 8081
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    password: michaelehab
+    url: jdbc:postgresql://localhost:5432/crawler
+    username: postgres
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
