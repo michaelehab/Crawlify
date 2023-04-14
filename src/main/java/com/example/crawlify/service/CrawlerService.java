@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -41,6 +42,7 @@ public class CrawlerService {
     }
 
     public void startCrawling(List<String> seeds) {
+        System.out.println("Crawler Started with " + numThreads + " Threads");
         // Add seeds to the queue
         urlsToVisit.addAll(seeds);
 
@@ -81,15 +83,14 @@ public class CrawlerService {
                     continue;
                 }
 
-                String canonicalUrl = UrlNormalizer.normalize(url);
-
-                // Check if URL has already been visited
-                if (visitedUrls.putIfAbsent(canonicalUrl, true) != null) {
-                    continue;
-                }
-
                 // Fetch page content
                 try {
+                    String canonicalUrl = UrlNormalizer.normalize(url);
+                    // Check if URL has already been visited
+                    if (visitedUrls.putIfAbsent(canonicalUrl, true) != null) {
+                        continue;
+                    }
+
                     Connection connection = Jsoup.connect(url);
                     Document document = connection.get();
                     if (connection.response().statusCode() == 200) {
@@ -134,6 +135,8 @@ public class CrawlerService {
                 } catch (IOException e) {
                     // Handle connection errors by skipping the link
                     System.err.println("Skipping URL due to connection error: " + url);
+                } catch (URISyntaxException e) {
+                    System.err.println("Skipping URL due to wrong syntax: " + url);
                 }
             }
         }
