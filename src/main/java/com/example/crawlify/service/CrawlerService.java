@@ -3,7 +3,6 @@ package com.example.crawlify.service;
 import com.example.crawlify.model.Page;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.utils.UrlNormalizer;
-import jakarta.transaction.Transactional;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -37,7 +36,6 @@ public class CrawlerService {
         this.maxPagesToCrawl = maxPagesToCrawl;
     }
 
-    @Transactional
     public synchronized void savePage(Page page) {
         pageRepository.save(page);
     }

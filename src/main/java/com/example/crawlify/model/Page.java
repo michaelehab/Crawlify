@@ -1,25 +1,17 @@
 package com.example.crawlify.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.zip.GZIPOutputStream;
 
-@Entity
-@Table(
-        name = "pages"
-)
+@Document(collection = "page")
 public class Page {
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.IDENTITY
-    )
-    private Long id;
+    private String id;
     private String url;
     private String title;
     private String html;
@@ -73,7 +65,7 @@ public class Page {
         return base64Html;
     }
 
-    public Long getId() {
+    public String getId() {
         return this.id;
     }
 
@@ -89,7 +81,7 @@ public class Page {
         return this.html;
     }
 
-    public void setId(final Long id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -105,7 +97,7 @@ public class Page {
         this.html = html;
     }
 
-    public Page(final Long id, final String url, final String title, final String html) {
+    public Page(final String id, final String url, final String title, final String html) {
         this.id = id;
         this.url = url;
         this.title = title;
