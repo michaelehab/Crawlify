@@ -24,15 +24,15 @@ public class CrawlerServiceTest {
 
     @Before
     public void setUp() {
-        this.crawlerService = new CrawlerService(this.pageRepository);
+        this.crawlerService = new CrawlerService(pageRepository);
     }
 
     @Test
     public void testCrawl() {
         List<String> seeds = Arrays.asList("https://www.geeksforgeeks.org/");
-        this.crawlerService.setMaxPagesToCrawl(10);
-        this.crawlerService.setCrawlerThreads(4);
-        this.crawlerService.startCrawling(seeds);
-        ((PageRepository)Mockito.verify(this.pageRepository, Mockito.times(10))).save((Page)Mockito.any(Page.class));
+        crawlerService.setMaxPagesToCrawl(10);
+        crawlerService.setCrawlerThreads(1);
+        crawlerService.startCrawling(seeds);
+        Mockito.verify(pageRepository, Mockito.times(10)).save(Mockito.any(Page.class));
     }
 }

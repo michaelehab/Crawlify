@@ -23,8 +23,8 @@ public class CrawlerController {
         List<String> seeds = crawlRequest.getSeeds();
         int numThreads = crawlRequest.getNumThreads();
         int maxPagesToCrawl = crawlRequest.getMaxPagesToCrawl();
-        this.crawlerService.setCrawlerThreads(numThreads);
-        this.crawlerService.setMaxPagesToCrawl(maxPagesToCrawl);
-        this.crawlerService.startCrawling(seeds);
+        crawlerService.setCrawlerThreads(numThreads);
+        crawlerService.setMaxPagesToCrawl(maxPagesToCrawl);
+        crawlerService.startCrawling(seeds);
     }
 }

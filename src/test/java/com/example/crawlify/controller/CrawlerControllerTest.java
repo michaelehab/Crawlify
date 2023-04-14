@@ -34,11 +34,11 @@ public class CrawlerControllerTest {
         request.setSeeds(Arrays.asList("http://example.com"));
         request.setNumThreads(4);
         request.setMaxPagesToCrawl(1000);
-        ((CrawlerService)Mockito.doNothing().when(this.crawlerService)).startCrawling(request.getSeeds());
+        Mockito.doNothing().when(this.crawlerService).startCrawling(request.getSeeds());
         this.mockMvc.perform(MockMvcRequestBuilders.post("/crawl", new Object[0]).contentType(MediaType.APPLICATION_JSON).content(asJsonString(request))).andExpect(MockMvcResultMatchers.status().isOk());
-        ((CrawlerService)Mockito.verify(this.crawlerService, Mockito.times(1))).setMaxPagesToCrawl(request.getMaxPagesToCrawl());
-        ((CrawlerService)Mockito.verify(this.crawlerService, Mockito.times(1))).setCrawlerThreads(request.getNumThreads());
-        ((CrawlerService)Mockito.verify(this.crawlerService, Mockito.times(1))).startCrawling(request.getSeeds());
+        Mockito.verify(this.crawlerService, Mockito.times(1)).setMaxPagesToCrawl(request.getMaxPagesToCrawl());
+        Mockito.verify(this.crawlerService, Mockito.times(1)).setCrawlerThreads(request.getNumThreads());
+        Mockito.verify(this.crawlerService, Mockito.times(1)).startCrawling(request.getSeeds());
     }
 
     public static String asJsonString(final Object obj) {
