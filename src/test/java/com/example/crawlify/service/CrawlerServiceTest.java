@@ -2,7 +2,6 @@ package com.example.crawlify.service;
 
 import com.example.crawlify.model.Page;
 import com.example.crawlify.repository.PageRepository;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,10 +28,10 @@ public class CrawlerServiceTest {
 
     @Test
     public void testCrawl() {
-        List<String> seeds = Arrays.asList("https://www.geeksforgeeks.org/");
-        crawlerService.setMaxPagesToCrawl(10);
+        List<String> seeds = List.of("https://www.github.com/");
+        crawlerService.setMaxPagesToCrawl(50);
         crawlerService.setCrawlerThreads(1);
         crawlerService.startCrawling(seeds);
-        Mockito.verify(pageRepository, Mockito.times(10)).save(Mockito.any(Page.class));
+        Mockito.verify(pageRepository, Mockito.times(50)).save(Mockito.any(Page.class));
     }
 }

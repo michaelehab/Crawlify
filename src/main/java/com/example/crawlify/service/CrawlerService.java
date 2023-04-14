@@ -3,6 +3,7 @@ package com.example.crawlify.service;
 import com.example.crawlify.model.Page;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.utils.UrlNormalizer;
+import jakarta.transaction.Transactional;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -13,9 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Service
 public class CrawlerService {
@@ -24,9 +23,9 @@ public class CrawlerService {
     public CrawlerService(PageRepository pageRepository){
         this.pageRepository = pageRepository;
     }
-    private final Set<String> visitedUrls = new HashSet<>();
-    private final Set<String> visitedPages = new HashSet<>();
-    private final Queue<String> urlsToVisit = new LinkedList<>();
+    private final ConcurrentHashMap<String, Boolean> visitedUrls = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> visitedPages = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<String> urlsToVisit = new ConcurrentLinkedQueue<>();
     private int maxPagesToCrawl;
     private int numThreads;
 
@@ -38,16 +37,19 @@ public class CrawlerService {
         this.maxPagesToCrawl = maxPagesToCrawl;
     }
 
+    @Transactional
+    public synchronized void savePage(Page page) {
+        pageRepository.save(page);
+    }
+
     public void startCrawling(List<String> seeds) {
         // Add seeds to the queue
-        for (String seed : seeds) {
-            urlsToVisit.offer(seed);
-        }
+        urlsToVisit.addAll(seeds);
 
         // Start crawling threads
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         for (int i = 0; i < numThreads; i++) {
-            executorService.submit(new CrawlerThread());
+            executorService.submit(new CrawlerThread(i));
         }
 
         // Wait for crawling to finish
@@ -57,23 +59,19 @@ public class CrawlerService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-
-        for (String url : visitedUrls) {
-            System.out.println(url);
-        }
     }
 
     private class CrawlerThread implements Runnable {
+        private int id;
+        public CrawlerThread(int id){
+            System.out.println("Crawler Thread with id=" + id + " is now running!");
+            this.id = id;
+        }
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 // Get next URL to visit
-                String url = null;
-                synchronized (urlsToVisit) {
-                    if (!urlsToVisit.isEmpty()) {
-                        url = urlsToVisit.poll();
-                    }
-                }
+                String url = urlsToVisit.poll();
 
                 if (url == null) {
                     // No more URLs to visit
@@ -88,65 +86,50 @@ public class CrawlerService {
                 String canonicalUrl = UrlNormalizer.normalize(url);
 
                 // Check if URL has already been visited
-                if (visitedUrls.contains(canonicalUrl)) {
+                if (visitedUrls.putIfAbsent(canonicalUrl, true) != null) {
                     continue;
                 }
 
-                // Mark URL as visited
-                visitedUrls.add(canonicalUrl);
-
                 // Fetch page content
                 try {
-                    Connection.Response response = Jsoup.connect(url)
-                            .followRedirects(false)
-                            .execute();
-                    int statusCode = response.statusCode();
-                    if (statusCode >= 200 && statusCode < 300) {
+                    Connection connection = Jsoup.connect(url);
+                    Document document = connection.get();
+                    if (connection.response().statusCode() == 200) {
                         // Check content type
-                        String contentType = response.contentType();
+                        String contentType = connection.response().contentType();
                         if (contentType == null || !contentType.startsWith("text/html")) {
                             // Skip non-HTML content
                             continue;
                         }
 
                         // Parse HTML content
-                        Document doc = response.parse();
-                        String title = doc.title();
-                        String content = doc.body().text();
+                        String title = document.title();
+                        String content = document.body().text();
 
                         // Save page to database
                         Page page = new Page(url, title, content);
+                        System.out.println("Thread with ID=" + this.id + " is saving page with url=" + url + " now visited urls count is=" + visitedUrls.size());
+
                         String compactString = page.getCompactString();
-                        if (visitedPages.contains(compactString)){
+                        if (visitedPages.putIfAbsent(compactString, true) != null){
                             continue;
                         }
-                        visitedPages.add(compactString);
-                        pageRepository.save(page);
+
+                        savePage(page);
 
                         // Enqueue links to visit
-                        Elements links = doc.select("a[href]");
+                        Elements links = document.select("a[href]");
                         for (Element link : links) {
                             String nextUrl = link.absUrl("href");
                             String normalizedNextUrl = UrlNormalizer.normalize(nextUrl);
-                            if (!visitedUrls.contains(normalizedNextUrl) && (nextUrl.startsWith("http://") || nextUrl.startsWith("https://"))) {
-                                synchronized (urlsToVisit) {
-                                    if (urlsToVisit.size() < maxPagesToCrawl) {
-                                        urlsToVisit.offer(nextUrl);
-                                    }
+                            if (visitedUrls.get(normalizedNextUrl) == null) {
+                                if (visitedUrls.size() + urlsToVisit.size() < maxPagesToCrawl) {
+                                    urlsToVisit.offer(nextUrl);
                                 }
                             }
                         }
-                    } else if (statusCode >= 300 && statusCode < 400) {
-                        // Handle redirect by enqueuing the new URL to visit
-                        String redirectUrl = response.header("Location");
-                        if (!visitedUrls.contains(redirectUrl) && (redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://"))) {
-                            synchronized (urlsToVisit) {
-                                if (urlsToVisit.size() < maxPagesToCrawl) {
-                                    urlsToVisit.offer(redirectUrl);
-                                }
-                            }
-                        }
-                    } else {
+                    }
+                    else {
                         // Handle other status codes by skipping the link
                         System.err.println("Skipping URL due to status code: " + url);
                     }
