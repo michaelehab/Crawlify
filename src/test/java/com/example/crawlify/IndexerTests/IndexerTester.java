@@ -37,7 +37,7 @@ public class IndexerTester implements Runnable {
             }
         }
 
-        indexer.calculateIDF(htmlFiles.size());
+        indexer.calculateTF_IDF(htmlFiles.size());
         System.out.println("After calculating TF-IDF: "+indexer.getInvertedIndex());
 
     }

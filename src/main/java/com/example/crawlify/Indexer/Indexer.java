@@ -32,7 +32,7 @@ public class Indexer {
     public HashMap<String,HashMap<String,Double>> getInvertedIndex(){
         return invertedIndex;
     }
-    public void calculateIDF(int totalNoOfDocuments){
+    public void calculateTF_IDF(int totalNoOfDocuments){
         String word,documentName;
         HashMap<String, Double> innerMap;
         double IDF,TF;
