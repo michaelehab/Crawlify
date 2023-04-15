@@ -1,0 +1,9 @@
+server:
+  port : 8081
+
+spring:
+  data:
+    mongodb:
+      database: crawlify
+      port: 27017
+      host: localhost
