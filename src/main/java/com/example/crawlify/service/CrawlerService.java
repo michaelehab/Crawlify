@@ -2,6 +2,7 @@ package com.example.crawlify.service;
 
 import com.example.crawlify.model.Page;
 import com.example.crawlify.repository.PageRepository;
+import com.example.crawlify.utils.RobotsChecker;
 import com.example.crawlify.utils.UrlNormalizer;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -71,6 +72,11 @@ public class CrawlerService {
 
                 // Check if URL uses http or https protocol
                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    continue;
+                }
+
+                // Check if robots are allowed
+                if(!RobotsChecker.areRobotsAllowed(url)){
                     continue;
                 }
 
