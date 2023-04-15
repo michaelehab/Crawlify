@@ -2,6 +2,7 @@ package com.example.crawlify.service;
 
 import com.example.crawlify.model.Page;
 import com.example.crawlify.repository.PageRepository;
+import com.example.crawlify.utils.RobotsChecker;
 import com.example.crawlify.utils.UrlNormalizer;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -37,10 +38,6 @@ public class CrawlerService {
         this.maxPagesToCrawl = maxPagesToCrawl;
     }
 
-    public synchronized void savePage(Page page) {
-        pageRepository.save(page);
-    }
-
     public void startCrawling(List<String> seeds) {
         System.out.println("Crawler Started with " + numThreads + " Threads");
         // Add seeds to the queue
@@ -49,7 +46,7 @@ public class CrawlerService {
         // Start crawling threads
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         for (int i = 0; i < numThreads; i++) {
-            executorService.submit(new CrawlerThread(i));
+            executorService.submit(new CrawlerThread());
         }
 
         // Wait for crawling to finish
@@ -62,13 +59,8 @@ public class CrawlerService {
     }
 
     private class CrawlerThread implements Runnable {
-        private int id;
-        public CrawlerThread(int id){
-            System.out.println("Crawler Thread with id=" + id + " is now running!");
-            this.id = id;
-        }
         @Override
-        public void run() {
+        public synchronized void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 // Get next URL to visit
                 String url = urlsToVisit.poll();
@@ -80,6 +72,11 @@ public class CrawlerService {
 
                 // Check if URL uses http or https protocol
                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    continue;
+                }
+
+                // Check if robots are allowed
+                if(!RobotsChecker.areRobotsAllowed(url)){
                     continue;
                 }
 
@@ -103,18 +100,18 @@ public class CrawlerService {
 
                         // Parse HTML content
                         String title = document.title();
-                        String content = document.body().text();
+                        String html = document.body().html();
 
                         // Save page to database
-                        Page page = new Page(url, title, content);
-                        System.out.println("Thread with ID=" + this.id + " is saving page with url=" + url + " now visited urls count is=" + visitedUrls.size());
+                        Page page = Page.builder().url(url).title(title).html(html).build();
 
+                        // Check page content
                         String compactString = page.getCompactString();
                         if (visitedPages.putIfAbsent(compactString, true) != null){
                             continue;
                         }
 
-                        savePage(page);
+                        pageRepository.save(page);
 
                         // Enqueue links to visit
                         Elements links = document.select("a[href]");
@@ -129,11 +126,9 @@ public class CrawlerService {
                         }
                     }
                     else {
-                        // Handle other status codes by skipping the link
                         System.err.println("Skipping URL due to status code: " + url);
                     }
                 } catch (IOException e) {
-                    // Handle connection errors by skipping the link
                     System.err.println("Skipping URL due to connection error: " + url);
                 } catch (URISyntaxException e) {
                     System.err.println("Skipping URL due to wrong syntax: " + url);

@@ -28,8 +28,8 @@ public class CrawlerServiceTest {
 
     @Test
     public void testCrawl() {
-        List<String> seeds = List.of("https://www.github.com", "https://www.geeksforgeeks.com", "https://www.baeldung.com");
-        crawlerService.setMaxPagesToCrawl(50);
+        List<String> seeds = List.of("https://www.github.com/", "https://www.khanacademy.org/", "https://www.programiz.com/", "https://www.tutorialspoint.com/");
+        crawlerService.setMaxPagesToCrawl(20);
         crawlerService.setCrawlerThreads(4);
         crawlerService.startCrawling(seeds);
         Mockito.verify(pageRepository, Mockito.times(20)).save(Mockito.any(Page.class));
