@@ -49,7 +49,7 @@ public class CrawlerService {
         // Start crawling threads
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         for (int i = 0; i < numThreads; i++) {
-            executorService.submit(new CrawlerThread(i));
+            executorService.submit(new CrawlerThread());
         }
 
         // Wait for crawling to finish
@@ -62,13 +62,8 @@ public class CrawlerService {
     }
 
     private class CrawlerThread implements Runnable {
-        private int id;
-        public CrawlerThread(int id){
-            System.out.println("Crawler Thread with id=" + id + " is now running!");
-            this.id = id;
-        }
         @Override
-        public void run() {
+        public synchronized void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 // Get next URL to visit
                 String url = urlsToVisit.poll();
@@ -106,8 +101,7 @@ public class CrawlerService {
                         String content = document.body().text();
 
                         // Save page to database
-                        Page page = new Page(url, title, content);
-                        System.out.println("Thread with ID=" + this.id + " is saving page with url=" + url + " now visited urls count is=" + visitedUrls.size());
+                        Page page = Page.builder().url(url).title(title).html(content).build();
 
                         String compactString = page.getCompactString();
                         if (visitedPages.putIfAbsent(compactString, true) != null){
@@ -129,11 +123,9 @@ public class CrawlerService {
                         }
                     }
                     else {
-                        // Handle other status codes by skipping the link
                         System.err.println("Skipping URL due to status code: " + url);
                     }
                 } catch (IOException e) {
-                    // Handle connection errors by skipping the link
                     System.err.println("Skipping URL due to connection error: " + url);
                 } catch (URISyntaxException e) {
                     System.err.println("Skipping URL due to wrong syntax: " + url);

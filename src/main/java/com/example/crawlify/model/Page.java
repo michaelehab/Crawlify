@@ -1,5 +1,9 @@
 package com.example.crawlify.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -9,18 +13,16 @@ import java.util.Base64;
 import java.util.zip.GZIPOutputStream;
 
 @Document(collection = "page")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Page {
     @Id
     private String id;
     private String url;
     private String title;
     private String html;
-
-    public Page(String url, String title, String html) {
-        this.url = url;
-        this.title = title;
-        this.html = html;
-    }
 
     public String getCompactString() {
         byte[] compressedHtml = null;
@@ -61,49 +63,6 @@ public class Page {
             var10.printStackTrace();
         }
 
-        String base64Html = Base64.getEncoder().encodeToString(compressedHtml);
-        return base64Html;
-    }
-
-    public String getId() {
-        return this.id;
-    }
-
-    public String getUrl() {
-        return this.url;
-    }
-
-    public String getTitle() {
-        return this.title;
-    }
-
-    public String getHtml() {
-        return this.html;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
-    }
-
-    public void setUrl(final String url) {
-        this.url = url;
-    }
-
-    public void setTitle(final String title) {
-        this.title = title;
-    }
-
-    public void setHtml(final String html) {
-        this.html = html;
-    }
-
-    public Page(final String id, final String url, final String title, final String html) {
-        this.id = id;
-        this.url = url;
-        this.title = title;
-        this.html = html;
-    }
-
-    public Page() {
+        return Base64.getEncoder().encodeToString(compressedHtml);
     }
 }
