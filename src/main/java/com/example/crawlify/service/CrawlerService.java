@@ -11,6 +11,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -29,6 +30,7 @@ public class CrawlerService {
     private final ConcurrentLinkedQueue<String> urlsToVisit = new ConcurrentLinkedQueue<>();
     private int maxPagesToCrawl;
     private int numThreads;
+    private AtomicInteger numOfCrawledPages = new AtomicInteger(0);
 
     public void setCrawlerThreads(int numThreads) {
         this.numThreads = numThreads;
@@ -39,7 +41,7 @@ public class CrawlerService {
     }
 
     public void startCrawling(List<String> seeds) {
-        System.out.println("Crawler Started with " + numThreads + " Threads");
+        numOfCrawledPages.set(0);
         // Add seeds to the queue
         urlsToVisit.addAll(seeds);
 
@@ -56,6 +58,7 @@ public class CrawlerService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+        System.out.println("Successfully Crawled " + numOfCrawledPages.get() + " pages");
     }
 
     private class CrawlerThread implements Runnable {
@@ -112,6 +115,10 @@ public class CrawlerService {
                         }
 
                         pageRepository.save(page);
+                        numOfCrawledPages.getAndIncrement();
+                        if(numOfCrawledPages.get() >= maxPagesToCrawl){
+                            break;
+                        }
 
                         // Enqueue links to visit
                         Elements links = document.select("a[href]");
@@ -119,9 +126,7 @@ public class CrawlerService {
                             String nextUrl = link.absUrl("href");
                             String normalizedNextUrl = UrlNormalizer.normalize(nextUrl);
                             if (visitedUrls.get(normalizedNextUrl) == null) {
-                                if (visitedUrls.size() + urlsToVisit.size() < maxPagesToCrawl) {
-                                    urlsToVisit.offer(nextUrl);
-                                }
+                                urlsToVisit.offer(nextUrl);
                             }
                         }
                     }
