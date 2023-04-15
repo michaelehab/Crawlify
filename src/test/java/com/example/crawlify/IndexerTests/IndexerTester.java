@@ -1,6 +1,18 @@
 package com.example.crawlify.IndexerTests;
 import com.example.crawlify.Indexer.Indexer;
-
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 import java.util.*;
 
 public class IndexerTester implements Runnable {
@@ -39,6 +51,29 @@ public class IndexerTester implements Runnable {
 
         indexer.calculateTF_IDF(htmlFiles.size());
         System.out.println("After calculating TF-IDF: "+indexer.getInvertedIndex());
+        addToDataBase(indexer.getInvertedIndex());
 
     }
-}
+    private static void addToDataBase(HashMap<String,HashMap<String,Double>> invertedIndex){
+        MongoClientSettings settings = MongoClientSettings.builder()
+                .applyToClusterSettings(builder ->
+                        builder.hosts(Arrays.asList(new ServerAddress("localhost", 27017))))
+                .build();
+
+        MongoClient mongoClient = MongoClients.create(settings);
+
+        MongoDatabase database = mongoClient.getDatabase("crawlify");
+        MongoCollection<Document> invertedIndexCollection = database.getCollection("invertedIndex");
+        Document document = new Document();
+        HashMap<String, HashMap<String, Double>> outerMap =invertedIndex;
+        for (String outerKey : outerMap.keySet()) {
+            Document innerDocument = new Document();
+            HashMap<String, Double> innerMap = outerMap.get(outerKey);
+            for (String innerKey : innerMap.keySet()) {
+                innerDocument.append(innerKey, innerMap.get(innerKey));
+            }
+            document.append(outerKey, innerDocument);
+        }
+        invertedIndexCollection.insertOne(document);
+
+    }}
