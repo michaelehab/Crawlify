@@ -37,10 +37,6 @@ public class CrawlerService {
         this.maxPagesToCrawl = maxPagesToCrawl;
     }
 
-    public synchronized void savePage(Page page) {
-        pageRepository.save(page);
-    }
-
     public void startCrawling(List<String> seeds) {
         System.out.println("Crawler Started with " + numThreads + " Threads");
         // Add seeds to the queue
@@ -98,17 +94,18 @@ public class CrawlerService {
 
                         // Parse HTML content
                         String title = document.title();
-                        String content = document.body().text();
+                        String html = document.body().html();
 
                         // Save page to database
-                        Page page = Page.builder().url(url).title(title).html(content).build();
+                        Page page = Page.builder().url(url).title(title).html(html).build();
 
+                        // Check page content
                         String compactString = page.getCompactString();
                         if (visitedPages.putIfAbsent(compactString, true) != null){
                             continue;
                         }
 
-                        savePage(page);
+                        pageRepository.save(page);
 
                         // Enqueue links to visit
                         Elements links = document.select("a[href]");
