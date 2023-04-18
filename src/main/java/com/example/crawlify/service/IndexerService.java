@@ -59,7 +59,7 @@ public class IndexerService {
         private List<String> words;
         private List<String> stopWords;
         private HashMap<String, Integer> wordFrequency;
-        private static HashMap<String, HashMap<String, Double>> invertedIndex;
+        private static HashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex;
         
 
 
@@ -78,24 +78,19 @@ public class IndexerService {
             totalNoWordsInADocument = 0;
         }
 
-        public HashMap<String, HashMap<String, Double>> getInvertedIndex() {
-            return invertedIndex;
-        }
-
-
         public void calculateTF_IDF(int totalNoOfDocuments) {
             String word, documentName;
-            HashMap<String, Double> innerMap;
+            HashMap<String,ArrayList< Double>> innerMap;
             double IDF, TF;
-            for (Map.Entry<String, HashMap<String, Double>> entry : invertedIndex.entrySet()) {
+            for (Map.Entry<String, HashMap<String,ArrayList< Double>>> entry : invertedIndex.entrySet()) {
                 word = entry.getKey();
 
                 innerMap = entry.getValue();
                 IDF = Math.log(totalNoOfDocuments / (double) innerMap.size());
-                for (Map.Entry<String, Double> document : entry.getValue().entrySet()) {
+                for (Map.Entry<String, ArrayList<Double>> document : entry.getValue().entrySet()) {
                     documentName = document.getKey();
-                    TF = document.getValue();
-                    invertedIndex.get(word).put(documentName, TF * IDF);
+                    TF = document.getValue().get(0);
+                    invertedIndex.get(word).get(documentName).set(0,TF*IDF);
 
                 }
                 wordData wordData=new wordData(word,invertedIndex.get(word));
@@ -112,27 +107,32 @@ public class IndexerService {
             int start = id * (pageList.size() / numThreads);
             int end = start + (pageList.size() / numThreads);
             if (pageList.size() % numThreads != 0 && id == numThreads - 1) end++;
-            String html;
+            String html,URL;
             for (int i = start; i < end; i++) {
                 html = pageList.get(i).getHtml();
                 if (html == null) return;
+                URL=pageList.get(i).getUrl();
+                URL=URL.replace(".","__");
                 Matcher matcher = createMatcherFromHTML(html);
-                processWords(matcher);
-                calculateTF(pageList.get(i).getUrl());
+                processWords(matcher,URL);
+                calculateTF(URL);
               //  print();
 
             }
         }
 
-        private void processWords(Matcher matcher) {
+        private void processWords(Matcher matcher,String URL) {
+            double position=0;
             while (matcher.find()) {
                 totalNoWordsInADocument++;
                 String word = matcher.group().toLowerCase();
                 if (removeStopWords(word) != "") {
                     word = wordStemmer(word);
                     calculateWordFrequency(word);
+                    addToInvertedIndex(word,URL,position);
                     words.add(word);
                 }
+                position++;
             }
         }
 
@@ -166,19 +166,29 @@ public class IndexerService {
             double TF;
             for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
                 TF = (double) entry.getValue() / totalNoWordsInADocument;
-                URL=URL.replace(".","__");
-                addToInvertedIndex(entry.getKey(), URL, TF);
+                invertedIndex.get(entry.getKey()).get(URL).set(0,TF);
             }
         }
 
-        private void addToInvertedIndex(String word, String htmlFile, double TF) {
+        private void addToInvertedIndex(String word, String URL,double position) {
             synchronized (invertedIndex) {
                 if (invertedIndex.containsKey(word)) {
-                    invertedIndex.get(word).put(htmlFile, TF);
+                    if(invertedIndex.get(word).containsKey(URL)){
+                        invertedIndex.get(word).get(URL).add(position);
+                    }
+                    else {
+                        ArrayList<Double> tempWordList=new ArrayList<>();
+                        tempWordList.add(0.0);
+                        tempWordList.add(position);
+                        invertedIndex.get(word).put(URL, tempWordList);
+                    }
                 } else {
-                    HashMap<String, Double> wordTF = new HashMap<>();
-                    wordTF.put(htmlFile, TF);
-                    invertedIndex.put(word, wordTF);
+                    HashMap<String, ArrayList<Double>> wordInnerMap = new HashMap<>();
+                    ArrayList<Double> tempWordList=new ArrayList<>();
+                    tempWordList.add(0.0);
+                    tempWordList.add(position);
+                    wordInnerMap.put(URL, tempWordList);
+                    invertedIndex.put(word, wordInnerMap);
                 }
             }
         }
