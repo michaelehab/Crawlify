@@ -1,6 +1,7 @@
 package com.example.crawlify.service;
 import com.example.crawlify.model.Page;
 import com.example.crawlify.model.Word;
+import com.example.crawlify.utils.wordData;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.repository.WordRepository;
 import org.jsoup.Jsoup;
@@ -50,7 +51,7 @@ public class IndexerService {
         }
 
         indexerThread.calculateTF_IDF(pageList.size());
-        System.out.println("After calculating TF-IDF: "+indexerThread.getInvertedIndex());
+        //System.out.println("After calculating TF-IDF: "+indexerThread.getInvertedIndex());
     }
 
     private class IndexerThread implements Runnable {
@@ -89,14 +90,23 @@ public class IndexerService {
             double IDF, TF;
             for (Map.Entry<String, HashMap<String, Double>> entry : invertedIndex.entrySet()) {
                 word = entry.getKey();
+
                 innerMap = entry.getValue();
                 IDF = Math.log(totalNoOfDocuments / (double) innerMap.size());
                 for (Map.Entry<String, Double> document : entry.getValue().entrySet()) {
                     documentName = document.getKey();
                     TF = document.getValue();
                     invertedIndex.get(word).put(documentName, TF * IDF);
+
                 }
+                wordData wordData=new wordData(word,invertedIndex.get(word));
+                //    System.out.println(wordInDB.getWordData());
+                Word wordInDB=Word.builder().wordData(wordData).build();
+                wordRepository.save(wordInDB);
+
             }
+
+
         }
 
         public void run() {
@@ -111,7 +121,7 @@ public class IndexerService {
                 Matcher matcher = createMatcherFromHTML(html);
                 processWords(matcher);
                 calculateTF(pageList.get(i).getUrl());
-                print();
+              //  print();
 
             }
         }
@@ -158,6 +168,7 @@ public class IndexerService {
             double TF;
             for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
                 TF = (double) entry.getValue() / totalNoWordsInADocument;
+                URL=URL.replace(".","__");
                 addToInvertedIndex(entry.getKey(), URL, TF);
             }
         }
