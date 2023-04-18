@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.tartarus.snowball.ext.englishStemmer;
 
 @Service
@@ -100,7 +99,6 @@ public class IndexerService {
 
                 }
                 wordData wordData=new wordData(word,invertedIndex.get(word));
-                //    System.out.println(wordInDB.getWordData());
                 Word wordInDB=Word.builder().wordData(wordData).build();
                 wordRepository.save(wordInDB);
 
@@ -192,15 +190,6 @@ public class IndexerService {
             System.out.println("Inverted index " + invertedIndex);
         }
 
-        private Document parseHtmlFile(String htmlFile) {
-            Document doc = null;
-            try {
-                doc = Jsoup.parse(new File(htmlFile), "UTF-8");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return doc;
-        }
     }
 
     }
