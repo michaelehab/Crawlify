@@ -43,7 +43,7 @@ public class IndexerService {
         }
 
         indexerThread.calculateTF_IDF(pageList.size());
-        //System.out.println("After calculating TF-IDF: "+indexerThread.getInvertedIndex());
+       // System.out.println("get word ten "+wordRepository.findByword("ten"));
     }
 
     private class IndexerThread implements Runnable {
