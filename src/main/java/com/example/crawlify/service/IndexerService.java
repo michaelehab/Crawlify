@@ -1,7 +1,6 @@
 package com.example.crawlify.service;
 import com.example.crawlify.model.Page;
 import com.example.crawlify.model.Word;
-import com.example.crawlify.utils.wordData;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.repository.WordRepository;
 import java.util.*;
@@ -87,8 +86,7 @@ public class IndexerService {
                     invertedIndex.get(word).get(documentName).set(0,TF*IDF);
 
                 }
-                wordData wordData=new wordData(word,invertedIndex.get(word));
-                Word wordInDB=Word.builder().wordData(wordData).build();
+                Word wordInDB=Word.builder().word(word).TF_IDFandOccurrences(invertedIndex.get(word)).build();
                 wordRepository.save(wordInDB);
 
             }

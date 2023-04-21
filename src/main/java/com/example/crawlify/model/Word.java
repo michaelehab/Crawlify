@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import com.example.crawlify.utils.wordData;
 
 
 @Document(collection = "word")
@@ -18,6 +17,7 @@ import com.example.crawlify.utils.wordData;
 public class Word {
     @Id
     private String id;
-    private wordData wordData;
+    private String word;
+    private HashMap<String, ArrayList<Double>> TF_IDFandOccurrences;
 
 }
