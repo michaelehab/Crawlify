@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.ByteArrayOutputStream;
@@ -20,9 +21,12 @@ import java.util.zip.GZIPOutputStream;
 public class Page {
     @Id
     private String id;
+    @Indexed(unique = true)
+    private String canonicalUrl;
     private String url;
     private String title;
     private String html;
+    private Integer popularity;
 
     public String getCompactString() {
         byte[] compressedHtml = null;

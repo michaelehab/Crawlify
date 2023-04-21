@@ -63,8 +63,12 @@ public class CrawlerService {
 
     private class CrawlerThread implements Runnable {
         @Override
-        public synchronized void run() {
+        public void run() {
             while (!Thread.currentThread().isInterrupted()) {
+                if(numOfCrawledPages.get() >= maxPagesToCrawl){
+                    break;
+                }
+
                 // Get next URL to visit
                 String url = urlsToVisit.poll();
 
@@ -86,8 +90,13 @@ public class CrawlerService {
                 // Fetch page content
                 try {
                     String canonicalUrl = UrlNormalizer.normalize(url);
+
                     // Check if URL has already been visited
                     if (visitedUrls.putIfAbsent(canonicalUrl, true) != null) {
+                        System.out.println("Met page " + canonicalUrl + " again!");
+                        Page existingWebpage = pageRepository.findByCanonicalUrl(canonicalUrl);
+                        existingWebpage.setPopularity(existingWebpage.getPopularity() + 1);
+                        pageRepository.save(existingWebpage);
                         continue;
                     }
 
@@ -105,8 +114,7 @@ public class CrawlerService {
                         String title = document.title();
                         String html = document.body().html();
 
-                        // Save page to database
-                        Page page = Page.builder().url(url).title(title).html(html).build();
+                        Page page = Page.builder().url(url).canonicalUrl(canonicalUrl).title(title).html(html).popularity(1).build();
 
                         // Check page content
                         String compactString = page.getCompactString();
@@ -116,9 +124,6 @@ public class CrawlerService {
 
                         pageRepository.save(page);
                         numOfCrawledPages.getAndIncrement();
-                        if(numOfCrawledPages.get() >= maxPagesToCrawl){
-                            break;
-                        }
 
                         // Enqueue links to visit
                         Elements links = document.select("a[href]");
