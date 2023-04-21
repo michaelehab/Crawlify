@@ -4,9 +4,6 @@ import com.example.crawlify.model.Word;
 import com.example.crawlify.utils.wordData;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.repository.WordRepository;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,11 +25,8 @@ public class IndexerService {
         this.numThreads = numThreads;
     }
 
-    public PageRepository getPageRepository() {
-        return pageRepository;
-    }
-
-    public void startIndexing(List<Page> pageList){
+    public void startIndexing(){
+        List<Page> pageList = pageRepository.findAll();
         IndexerThread indexerThread=new IndexerThread(pageList);
         Thread[] threads = new Thread[numThreads];
 
@@ -55,10 +49,10 @@ public class IndexerService {
 
     private class IndexerThread implements Runnable {
         private int totalNoWordsInADocument;
-        private List<Page> pageList;
-        private List<String> words;
-        private List<String> stopWords;
-        private HashMap<String, Integer> wordFrequency;
+        private final List<Page> pageList;
+        private final List<String> words;
+        private final List<String> stopWords;
+        private final HashMap<String, Integer> wordFrequency;
         private static HashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex;
         
 
@@ -126,7 +120,7 @@ public class IndexerService {
             while (matcher.find()) {
                 totalNoWordsInADocument++;
                 String word = matcher.group().toLowerCase();
-                if (removeStopWords(word) != "") {
+                if (!Objects.equals(removeStopWords(word), "")) {
                     word = wordStemmer(word);
                     calculateWordFrequency(word);
                     addToInvertedIndex(word,URL,position);
@@ -152,8 +146,7 @@ public class IndexerService {
             englishStemmer stemmer = new englishStemmer();
             stemmer.setCurrent(word);
             stemmer.stem();
-            String stemmedWord = stemmer.getCurrent();
-            return stemmedWord;
+            return stemmer.getCurrent();
         }
 
         private void calculateWordFrequency(String word) {
