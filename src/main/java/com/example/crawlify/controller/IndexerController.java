@@ -23,8 +23,4 @@ public class IndexerController {
         indexerService.setIndexerThreads(numThreads);
         indexerService.startIndexing(getHTMLandURLFromDB());
     }
-    @GetMapping
-    public List<Page> getHTMLandURLFromDB(){
-        return indexerService.getPageRepository().findAll();
-    }
 }
