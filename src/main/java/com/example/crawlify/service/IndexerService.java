@@ -156,10 +156,14 @@ public class IndexerService {
         }
 
         private void calculateTF(String URL) {
-            double TF;
             for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
-                TF = (double) entry.getValue() / totalNoWordsInADocument;
-                invertedIndex.get(entry.getKey()).get(URL).set(0,TF);
+                double TF = (double) entry.getValue() / totalNoWordsInADocument;
+                if (invertedIndex.get(entry.getKey()) != null) {
+                    ArrayList<Double> positionList = invertedIndex.get(entry.getKey()).get(URL);
+                    if (positionList != null) {
+                        positionList.set(0, TF);
+                    }
+                }
             }
         }
 
