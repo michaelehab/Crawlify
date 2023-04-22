@@ -1,9 +1,10 @@
 package com.example.crawlify.service;
 import com.example.crawlify.model.Word;
+import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.repository.WordRepository;
 import com.example.crawlify.utils.wordProcessor;
 import org.springframework.stereotype.Service;
-import com.example.crawlify.model.Word;
+import com.example.crawlify.service.PageRankerService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,12 +16,14 @@ import java.util.regex.Pattern;
 @Service
 public class QueryService {
     private final WordRepository wordRepository;
+    private final PageRepository pageRepository;
     private wordProcessor wordProcessor;
     private String query;
     private HashMap<String,Integer> queryWordPosition;
     private List<Word> wordObjectFromDBList;
-    public QueryService(WordRepository wordRepository) {
+    public QueryService(WordRepository wordRepository,PageRepository pageRepository) {
         this.wordRepository = wordRepository;
+        this.pageRepository=pageRepository;
         wordProcessor=new wordProcessor();
     }
     public void setQueryToProcess(String query) {
@@ -45,7 +48,9 @@ public class QueryService {
             }
             position++;
         }
-        System.out.println(queryWordPosition);
-        System.out.println(wordObjectFromDBList);
+     //   System.out.println(queryWordPosition);
+   //     System.out.println(wordObjectFromDBList);
+        PageRankerService pageRankerService=new PageRankerService(pageRepository);
+        pageRankerService.startRanking(wordObjectFromDBList);
     }
 }
