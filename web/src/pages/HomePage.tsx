@@ -28,7 +28,13 @@ function Home() {
           borderRadius="5px"
           width={"50vw"}
         />
-        <Button type="submit" colorScheme="blue" ml={2} borderRadius="5px">
+        <Button
+          type="submit"
+          bg={"#0718C4"}
+          color={"white"}
+          ml={2}
+          borderRadius="5px"
+        >
           Search
         </Button>
       </Box>
