@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PageRankerService {
-    private  PageRepository pageRepository;
+    private final PageRepository pageRepository;
     private List<Pair<String,Double>> sortedPageFinalScore;
     private HashMap<String,Double> pageTF_IDFScoreHashMap;
     public PageRankerService(PageRepository pageRepository){
@@ -27,13 +27,13 @@ public class PageRankerService {
         String URL;
         double TF_IDFScore;
         for(Word wordObject:wordObjectsFromDBList){
-            for(Map.Entry<String,ArrayList<Double>> TF_IDFAndOccurences:wordObject.getTF_IDFandOccurrences().entrySet()){
-                URL=TF_IDFAndOccurences.getKey().replace("__",".");
+            for(Map.Entry<String,ArrayList<Double>> TF_IDFAndOccurrences:wordObject.getTF_IDFandOccurrences().entrySet()){
+                URL=TF_IDFAndOccurrences.getKey().replace("__",".");
                 if(!pageTF_IDFScoreHashMap.containsKey(URL)){
-                    pageTF_IDFScoreHashMap.put(URL,TF_IDFAndOccurences.getValue().get(0));
+                    pageTF_IDFScoreHashMap.put(URL,TF_IDFAndOccurrences.getValue().get(0));
                 }
                 else{
-                    TF_IDFScore=pageTF_IDFScoreHashMap.get(URL)+TF_IDFAndOccurences.getValue().get(0);
+                    TF_IDFScore=pageTF_IDFScoreHashMap.get(URL)+TF_IDFAndOccurrences.getValue().get(0);
                     pageTF_IDFScoreHashMap.put(URL,TF_IDFScore);
                 }
             }
@@ -53,12 +53,7 @@ public class PageRankerService {
         }
     }
     private void sortPagesByFinalScore(){
-        Collections.sort(sortedPageFinalScore, new Comparator<Pair<String, Double>>() {
-            @Override
-            public int compare(Pair<String, Double> p1, Pair<String, Double> p2) {
-                return p2.getValue().compareTo(p1.getValue());
-            }
-        });
+        sortedPageFinalScore.sort((p1, p2) -> p2.getValue().compareTo(p1.getValue()));
     }
     private void printPageFinalScore(){
         for(Pair<String,Double> pair:sortedPageFinalScore){

@@ -2,7 +2,8 @@ package com.example.crawlify.controller;
 
 import com.example.crawlify.service.CrawlerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -31,11 +32,11 @@ public class CrawlerControllerTest {
     @Test
     public void testCrawl() throws Exception {
         CrawlRequest request = new CrawlRequest();
-        request.setSeeds(Arrays.asList("http://example.com"));
+        request.setSeeds(List.of("http://example.com"));
         request.setNumThreads(4);
         request.setMaxPagesToCrawl(1000);
         Mockito.doNothing().when(this.crawlerService).startCrawling(request.getSeeds());
-        this.mockMvc.perform(MockMvcRequestBuilders.post("/crawl", new Object[0]).contentType(MediaType.APPLICATION_JSON).content(asJsonString(request))).andExpect(MockMvcResultMatchers.status().isOk());
+        this.mockMvc.perform(MockMvcRequestBuilders.post("/crawl").contentType(MediaType.APPLICATION_JSON).content(asJsonString(request))).andExpect(MockMvcResultMatchers.status().isOk());
         Mockito.verify(this.crawlerService, Mockito.times(1)).setMaxPagesToCrawl(request.getMaxPagesToCrawl());
         Mockito.verify(this.crawlerService, Mockito.times(1)).setCrawlerThreads(request.getNumThreads());
         Mockito.verify(this.crawlerService, Mockito.times(1)).startCrawling(request.getSeeds());

@@ -30,7 +30,7 @@ public class CrawlerService {
     private final ConcurrentLinkedQueue<String> urlsToVisit = new ConcurrentLinkedQueue<>();
     private int maxPagesToCrawl;
     private int numThreads;
-    private AtomicInteger numOfCrawledPages = new AtomicInteger(0);
+    private final AtomicInteger numOfCrawledPages = new AtomicInteger(0);
 
     public void setCrawlerThreads(int numThreads) {
         this.numThreads = numThreads;
