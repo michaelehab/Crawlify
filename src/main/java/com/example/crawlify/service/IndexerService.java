@@ -3,6 +3,7 @@ import com.example.crawlify.model.Page;
 import com.example.crawlify.model.Word;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.repository.WordRepository;
+import com.example.crawlify.utils.wordProcessor;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,24 +51,20 @@ public class IndexerService {
         private int totalNoWordsInADocument;
         private final List<Page> pageList;
         private final List<String> words;
-        private final List<String> stopWords;
+        private final wordProcessor wordProcessor;
+
         private final HashMap<String, Integer> wordFrequency;
         private static HashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex;
-        
+
 
 
         @Autowired
         public  IndexerThread(List<Page> pageList) {
             wordFrequency = new HashMap<>();
             invertedIndex = new HashMap<>();
+            wordProcessor=new wordProcessor();
             this.pageList=pageList;
             words = new ArrayList<>();
-            stopWords = Arrays.asList(
-                    "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in",
-                    "into", "is", "it", "no", "not", "of", "on", "or", "such", "that", "the",
-                    "their", "then", "there", "these", "they", "this", "to", "was", "will",
-                    "with"
-            );
             totalNoWordsInADocument = 0;
         }
 
@@ -117,9 +114,9 @@ public class IndexerService {
             double position=0;
             while (matcher.find()) {
                 totalNoWordsInADocument++;
-                String word = matcher.group().toLowerCase();
-                if (!Objects.equals(removeStopWords(word), "")) {
-                    word = wordStemmer(word);
+                String word =wordProcessor.changeWordToLowercase(matcher.group());
+                if (!Objects.equals(wordProcessor.removeStopWords(word), "")) {
+                    word = wordProcessor.wordStemmer(word);
                     calculateWordFrequency(word);
                     addToInvertedIndex(word,URL,position);
                     words.add(word);
@@ -134,18 +131,8 @@ public class IndexerService {
             return pattern.matcher(htmlContent);
         }
 
-        private String removeStopWords(String word) {
-            if (!stopWords.contains(word))
-                return word;
-            return "";
-        }
 
-        private String wordStemmer(String word) {
-            englishStemmer stemmer = new englishStemmer();
-            stemmer.setCurrent(word);
-            stemmer.stem();
-            return stemmer.getCurrent();
-        }
+
 
         private void calculateWordFrequency(String word) {
             if (wordFrequency.containsKey(word))
