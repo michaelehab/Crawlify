@@ -15,7 +15,7 @@ public class QueryProcessorController {
         this.queryService = queryService;
     }
 
-    @PostMapping
+    @GetMapping
     public void startProcessing(@RequestBody QueryProcessorRequest queryRequest) {
         String Query = queryRequest.getQuery();
         queryService.setQueryToProcess(Query);
