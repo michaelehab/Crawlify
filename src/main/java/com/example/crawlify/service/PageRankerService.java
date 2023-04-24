@@ -5,6 +5,7 @@ import com.example.crawlify.model.Word;
 import java.util.*;
 import com.example.crawlify.repository.PageRepository;
 import javafx.util.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,8 +13,9 @@ public class PageRankerService {
     private final PageRepository pageRepository;
     private List<Pair<String,Double>> sortedPageFinalScore;
     private HashMap<String,Double> pageTF_IDFScoreHashMap;
+    @Autowired
     public PageRankerService(PageRepository pageRepository){
-        this.pageRepository=pageRepository;
+        this.pageRepository = pageRepository;
     }
     public void startRanking(List<Word> wordObjectsFromDBList ){
         sortedPageFinalScore=new ArrayList<>();

@@ -3,6 +3,7 @@ import com.example.crawlify.model.Word;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.repository.WordRepository;
 import com.example.crawlify.utils.wordProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,12 +18,14 @@ public class QueryService {
     private final WordRepository wordRepository;
     private final PageRepository pageRepository;
     private final wordProcessor wordProcessor;
+    private final PageRankerService pageRankerService;
     private String query;
-
-    public QueryService(WordRepository wordRepository,PageRepository pageRepository) {
+    @Autowired
+    public QueryService(WordRepository wordRepository, PageRepository pageRepository, PageRankerService pageRankerService) {
         this.wordRepository = wordRepository;
-        this.pageRepository=pageRepository;
-        wordProcessor=new wordProcessor();
+        this.pageRepository = pageRepository;
+        this.pageRankerService = pageRankerService;
+        wordProcessor = new wordProcessor();
     }
     public void setQueryToProcess(String query) {
         this.query = query;
@@ -39,7 +42,7 @@ public class QueryService {
             word = wordProcessor.changeWordToLowercase(matcher.group());
             if (!Objects.equals(wordProcessor.removeStopWords(word), "")) {
                 word = wordProcessor.wordStemmer(word);
-                wordObjectsFromDB =wordRepository.findByword(word);
+                wordObjectsFromDB = wordRepository.findByword(word);
                 if(!wordObjectsFromDB.isEmpty())
                     wordObjectFromDBList.add(wordObjectsFromDB.get(0));
                 queryWordPosition.put(word, position);
@@ -47,7 +50,6 @@ public class QueryService {
             position++;
         }
 
-        PageRankerService pageRankerService=new PageRankerService(pageRepository);
         pageRankerService.startRanking(wordObjectFromDBList);
     }
 }
