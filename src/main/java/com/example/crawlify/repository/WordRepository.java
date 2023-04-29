@@ -7,5 +7,5 @@ import java.util.*;
 
 @Repository
 public interface WordRepository extends MongoRepository<Word, String> {
-    List<Word> findByword(String word);
+    Optional<Word> findByword(String word);
 }
