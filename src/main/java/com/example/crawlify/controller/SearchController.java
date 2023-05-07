@@ -67,7 +67,12 @@ public class SearchController {
                     operation = "NOT";
                 }
                 else{
-                    strings = List.of(searchQuery.substring(1, searchQuery.length() - 1).split("\\s+"));
+                    if(searchQuery.startsWith("\"")){
+                        strings = List.of(searchQuery.substring(1, searchQuery.length() - 1));
+                    }
+                    else{
+                        strings = List.of(searchQuery.split("\\s+"));
+                    }
                 }
             }
         }

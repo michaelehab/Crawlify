@@ -4,7 +4,11 @@ import com.example.crawlify.model.Page;
 import com.example.crawlify.model.SearchResult;
 import com.example.crawlify.model.Word;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.example.crawlify.repository.PageRepository;
+import com.example.crawlify.utils.SnippetGenerator;
 import javafx.util.Pair;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,110 +71,43 @@ public class PageRankerService {
         }
     }
 
+    public String generateSnippet(String htmlText, List<String> words, int n) {
+        String[] splitText = htmlText.split("\\s+");
+
+        // Count occurrences of words
+        Map<String, Integer> wordCounts = new HashMap<>();
+        for (String word : words) wordCounts.put(word, 0);
+        for (String word : splitText) {
+            if (wordCounts.containsKey(word)) wordCounts.put(word, wordCounts.get(word) + 1);
+        }
+
+        // Find window with maximum word occurrences
+        int maxCount = 0;
+        int bestStart = 0;
+        for (int start = 0; start < splitText.length - n; start++) {
+            int count = 0;
+            for (int end = start; end < start + n; end++) {
+                if (wordCounts.containsKey(splitText[end])) count += 1;
+            }
+            if (count > maxCount) {
+                maxCount = count;
+                bestStart = start;
+            }
+        }
+
+        // Generate snippet with bold words
+        String snippet = String.join(" ", Arrays.copyOfRange(splitText, bestStart, bestStart + n));
+        for (String word : words) {
+            snippet = snippet.replace(word, "<b>" + word + "</b>");
+        }
+        return snippet;
+    }
+
     private List<SearchResult> getSearchResults(List<String> queries){
         List<SearchResult> searchResults = new ArrayList<>();
         for(Pair<String,Double> pair : sortedPageFinalScore) {
             Page resultPage = pageRepository.findByUrl(pair.getKey());
-            String webPage = Jsoup.parse(resultPage.getHtml()).text();
-
-            // Create a string builder to store the modified text
-            StringBuilder sb = new StringBuilder();
-
-            // Create a variable to store the maximum snippet size
-            int maxSnippetSize = 250;
-
-            // Create a variable to store the index of the first occurrence of any word from the list
-            int firstIndex = -1;
-
-            // Loop through each character of the original text
-            for (int i = 0; i < webPage.length(); i++) {
-                // Get the current character
-                char c = webPage.charAt(i);
-
-                // Check if the current character is the start of a word
-                if (Character.isLetter(c) && (i == 0 || !Character.isLetter(webPage.charAt(i - 1)))) {
-                    // Get the index of the end of the word
-                    int j = i + 1;
-                    while (j < webPage.length() && Character.isLetter(webPage.charAt(j))) {
-                        j++;
-                    }
-
-                    // Get the word as a substring
-                    String word = webPage.substring(i, j);
-
-                    // Check if the word is in the list of words to make bold
-                    if (queries.contains(word)) {
-                        // Check if this is the first occurrence of any word from the list
-                        if (firstIndex == -1) {
-                            // Set the first index to the current index
-                            firstIndex = i;
-                        }
-                    }
-                }
-            }
-
-            // Check if any word from the list was found
-            if (firstIndex != -1) {
-                // Create a variable to store the start index of the snippet
-                int startIndex = firstIndex - maxSnippetSize / 2;
-
-                // Adjust the start index if it is negative or too close to the end
-                if (startIndex < 0) {
-                    startIndex = 0;
-                } else if (startIndex + maxSnippetSize > webPage.length()) {
-                    startIndex = webPage.length() - maxSnippetSize;
-                }
-
-                // Create a variable to store the end index of the snippet
-                int endIndex = startIndex + maxSnippetSize;
-
-                // Adjust the end index if it is too large
-                if (endIndex > webPage.length()) {
-                    endIndex = webPage.length();
-                }
-
-                // Loop through each character of the snippet
-                for (int i = startIndex; i < endIndex; i++) {
-                    // Get the current character
-                    char c = webPage.charAt(i);
-
-                    // Check if the current character is the start of a word
-                    if (Character.isLetter(c) && (i == startIndex || !Character.isLetter(webPage.charAt(i - 1)))) {
-                        // Get the index of the end of the word
-                        int j = i + 1;
-                        while (j < endIndex && Character.isLetter(webPage.charAt(j))) {
-                            j++;
-                        }
-
-                        // Get the word as a substring
-                        String word = webPage.substring(i, j);
-
-                        // Check if the word is in the list of words to make bold
-                        if (queries.contains(word)) {
-                            // Append the opening <b> tag to the string builder
-                            sb.append("<b>");
-
-                            // Append the word to the string builder
-                            sb.append(word);
-
-                            // Append the closing </b> tag to the string builder
-                            sb.append("</b>");
-
-                            // Update the index to skip the rest of the word
-                            i = j - 1;
-                        } else {
-                            // Append the character to the string builder
-                            sb.append(c);
-                        }
-                    } else {
-                        // Append the character to the string builder
-                        sb.append(c);
-                    }
-                }
-
-                searchResults.add(new SearchResult(resultPage.getTitle(), resultPage.getUrl(), sb.toString()));
-            }
-
+            searchResults.add(new SearchResult(resultPage.getTitle(), resultPage.getUrl(), SnippetGenerator.generateSnippet(resultPage.getHtml(), queries)));
         }
         return searchResults;
     }
