@@ -7,11 +7,8 @@ import java.util.*;
 import com.example.crawlify.repository.PageRepository;
 import javafx.util.Pair;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.jsoup.nodes.Element;
 
 @Service
 public class PageRankerService {
@@ -74,7 +71,7 @@ public class PageRankerService {
         List<SearchResult> searchResults = new ArrayList<>();
         for(Pair<String,Double> pair : sortedPageFinalScore) {
             Page resultPage = pageRepository.findByUrl(pair.getKey());
-            String webPage = Jsoup.parse(resultPage.getHtml()).body().text();
+            String webPage = Jsoup.parse(resultPage.getHtml()).text();
 
             // Create a string builder to store the modified text
             StringBuilder sb = new StringBuilder();

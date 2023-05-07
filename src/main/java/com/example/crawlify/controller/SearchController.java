@@ -3,12 +3,15 @@ import com.example.crawlify.model.SearchResult;
 import com.example.crawlify.model.Word;
 import com.example.crawlify.service.PageRankerService;
 import com.example.crawlify.service.PhraseSearcherService;
-import com.example.crawlify.service.QueryService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @RestController
@@ -24,29 +27,54 @@ public class SearchController {
     }
 
     @GetMapping
-    public List<SearchResult> startSearching(@RequestParam("query") String searchQuery, @RequestParam("page") Integer pageNumber) {
+    public List<SearchResult> startSearching(@RequestParam("query") String encodedSearchQuery, @RequestParam("page") Integer pageNumber, @RequestParam("ie") String ie) throws UnsupportedEncodingException {
+        String searchQuery;
+        if (ie.equals("UTF-8")){
+            searchQuery = java.net.URLDecoder.decode(encodedSearchQuery, StandardCharsets.UTF_8);
+            System.out.println("Decoded query is: " + searchQuery);
+        }
+        else{
+            throw new UnsupportedEncodingException();
+        }
         // Create a list to store the strings in the query
-        List<String> strings = new ArrayList<>();
+        List<String> strings;
 
         // Create a variable to store the operation in the query
         String operation = "OR";
 
-        // Split the query by spaces
-        String[] tokens = searchQuery.split("\\s+");
+        String regex = "(.*)\\bAND\\b(.*)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(searchQuery);
 
-        // Loop through the tokens and check if they are strings or operations
-        for (String token : tokens) {
-            // If the token starts and ends with double quotes, it is a string
-            if (token.startsWith("\"") && token.endsWith("\"")) {
-                // Remove the double quotes and add the token to the list of strings
-                strings.add(token.substring(1, token.length() - 1));
+        if (matcher.find()) {
+            strings = List.of(matcher.group(1).substring(1, matcher.group(1).length() - 1), matcher.group(2).substring(1, matcher.group(2).length() - 1));
+            operation = "AND";
+        }
+        else {
+            regex = "(.*)\\bOR\\b(.*)";
+            pattern = Pattern.compile(regex);
+            matcher = pattern.matcher(searchQuery);
+            if (matcher.find()) {
+                strings = List.of(matcher.group(1).substring(1, matcher.group(1).length() - 1), matcher.group(2).substring(1, matcher.group(2).length() - 1));
+                operation = "OR";
             }
-            // If the token is AND or OR, it is an operation
-            else if (token.equals("AND") || token.equals("OR") || token.equals("NOT")) {
-                // Set the operation variable to the token
-                operation = token;
+            else{
+                regex = "(.*)\\bNOT\\b(.*)";
+                pattern = Pattern.compile(regex);
+                matcher = pattern.matcher(searchQuery);
+                if (matcher.find()) {
+                    strings = List.of(matcher.group(1).substring(1, matcher.group(1).length() - 1), matcher.group(2).substring(1, matcher.group(2).length() - 1));
+                    operation = "NOT";
+                }
+                else{
+                    strings = List.of(searchQuery.substring(1, searchQuery.length() - 1).split("\\s+"));
+                }
             }
         }
+
+//        for(String s : strings){
+//            System.out.println(s);
+//        }
 
         List<Word> relevantWords = phraseSearcherService.startProcessing(strings, operation);
         return pageRankerService.startRanking(relevantWords, strings);
