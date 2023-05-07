@@ -1,12 +1,17 @@
 package com.example.crawlify.service;
 
 import com.example.crawlify.model.Page;
+import com.example.crawlify.model.SearchResult;
 import com.example.crawlify.model.Word;
 import java.util.*;
 import com.example.crawlify.repository.PageRepository;
 import javafx.util.Pair;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.jsoup.nodes.Element;
 
 @Service
 public class PageRankerService {
@@ -17,13 +22,14 @@ public class PageRankerService {
     public PageRankerService(PageRepository pageRepository){
         this.pageRepository = pageRepository;
     }
-    public void startRanking(List<Word> wordObjectsFromDBList ){
+    public List<SearchResult> startRanking(List<Word> wordObjectsFromDBList, List<String> queries){
         sortedPageFinalScore=new ArrayList<>();
         pageTF_IDFScoreHashMap=new HashMap<>();
         calculatePageFinalTF_IDF(wordObjectsFromDBList);
         calculatePageFinalTotalScore();
         sortPagesByFinalScore();
         printPageFinalScore();
+        return getSearchResults(queries);
     }
     private void calculatePageFinalTF_IDF(List<Word> relevantWords){
         String URL;
@@ -62,6 +68,114 @@ public class PageRankerService {
 
             System.out.println(pair.getKey()+"\t"+pair.getValue());
         }
+    }
+
+    private List<SearchResult> getSearchResults(List<String> queries){
+        List<SearchResult> searchResults = new ArrayList<>();
+        for(Pair<String,Double> pair : sortedPageFinalScore) {
+            Page resultPage = pageRepository.findByUrl(pair.getKey());
+            String webPage = Jsoup.parse(resultPage.getHtml()).body().text();
+
+            // Create a string builder to store the modified text
+            StringBuilder sb = new StringBuilder();
+
+            // Create a variable to store the maximum snippet size
+            int maxSnippetSize = 250;
+
+            // Create a variable to store the index of the first occurrence of any word from the list
+            int firstIndex = -1;
+
+            // Loop through each character of the original text
+            for (int i = 0; i < webPage.length(); i++) {
+                // Get the current character
+                char c = webPage.charAt(i);
+
+                // Check if the current character is the start of a word
+                if (Character.isLetter(c) && (i == 0 || !Character.isLetter(webPage.charAt(i - 1)))) {
+                    // Get the index of the end of the word
+                    int j = i + 1;
+                    while (j < webPage.length() && Character.isLetter(webPage.charAt(j))) {
+                        j++;
+                    }
+
+                    // Get the word as a substring
+                    String word = webPage.substring(i, j);
+
+                    // Check if the word is in the list of words to make bold
+                    if (queries.contains(word)) {
+                        // Check if this is the first occurrence of any word from the list
+                        if (firstIndex == -1) {
+                            // Set the first index to the current index
+                            firstIndex = i;
+                        }
+                    }
+                }
+            }
+
+            // Check if any word from the list was found
+            if (firstIndex != -1) {
+                // Create a variable to store the start index of the snippet
+                int startIndex = firstIndex - maxSnippetSize / 2;
+
+                // Adjust the start index if it is negative or too close to the end
+                if (startIndex < 0) {
+                    startIndex = 0;
+                } else if (startIndex + maxSnippetSize > webPage.length()) {
+                    startIndex = webPage.length() - maxSnippetSize;
+                }
+
+                // Create a variable to store the end index of the snippet
+                int endIndex = startIndex + maxSnippetSize;
+
+                // Adjust the end index if it is too large
+                if (endIndex > webPage.length()) {
+                    endIndex = webPage.length();
+                }
+
+                // Loop through each character of the snippet
+                for (int i = startIndex; i < endIndex; i++) {
+                    // Get the current character
+                    char c = webPage.charAt(i);
+
+                    // Check if the current character is the start of a word
+                    if (Character.isLetter(c) && (i == startIndex || !Character.isLetter(webPage.charAt(i - 1)))) {
+                        // Get the index of the end of the word
+                        int j = i + 1;
+                        while (j < endIndex && Character.isLetter(webPage.charAt(j))) {
+                            j++;
+                        }
+
+                        // Get the word as a substring
+                        String word = webPage.substring(i, j);
+
+                        // Check if the word is in the list of words to make bold
+                        if (queries.contains(word)) {
+                            // Append the opening <b> tag to the string builder
+                            sb.append("<b>");
+
+                            // Append the word to the string builder
+                            sb.append(word);
+
+                            // Append the closing </b> tag to the string builder
+                            sb.append("</b>");
+
+                            // Update the index to skip the rest of the word
+                            i = j - 1;
+                        } else {
+                            // Append the character to the string builder
+                            sb.append(c);
+                        }
+                    } else {
+                        // Append the character to the string builder
+                        sb.append(c);
+                    }
+                }
+
+                searchResults.add(new SearchResult(resultPage.getTitle(), resultPage.getUrl(), sb.toString()));
+            }
+
+        }
+        return searchResults;
     }
 }
 
