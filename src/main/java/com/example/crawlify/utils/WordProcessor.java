@@ -5,9 +5,9 @@ import org.tartarus.snowball.ext.englishStemmer;
 import java.util.Arrays;
 import java.util.List;
 
-public class wordProcessor {
+public class WordProcessor {
     private final List<String> stopWords;
-    public wordProcessor(){
+    public WordProcessor(){
         stopWords = Arrays.asList(
                 "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in",
                 "into", "is", "it", "no", "not", "of", "on", "or", "such", "that", "the",

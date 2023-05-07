@@ -3,7 +3,7 @@ import com.example.crawlify.model.Page;
 import com.example.crawlify.model.Word;
 import com.example.crawlify.repository.PageRepository;
 import com.example.crawlify.repository.WordRepository;
-import com.example.crawlify.utils.wordProcessor;
+import com.example.crawlify.utils.WordProcessor;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,7 +50,7 @@ public class IndexerService {
         private int totalNoWordsInADocument;
         private final List<Page> pageList;
         private final List<String> words;
-        private final wordProcessor wordProcessor;
+        private final WordProcessor wordProcessor;
 
         private final HashMap<String, Integer> wordFrequency;
         private static HashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex;
@@ -61,7 +61,7 @@ public class IndexerService {
         public  IndexerThread(List<Page> pageList) {
             wordFrequency = new HashMap<>();
             invertedIndex = new HashMap<>();
-            wordProcessor=new wordProcessor();
+            wordProcessor=new WordProcessor();
             this.pageList=pageList;
             words = new ArrayList<>();
             totalNoWordsInADocument = 0;

@@ -25,10 +25,10 @@ public class PageRankerService {
         sortPagesByFinalScore();
         printPageFinalScore();
     }
-    private void calculatePageFinalTF_IDF(List<Word>wordObjectsFromDBList){
+    private void calculatePageFinalTF_IDF(List<Word> relevantWords){
         String URL;
         double TF_IDFScore;
-        for(Word wordObject:wordObjectsFromDBList){
+        for(Word wordObject:relevantWords){
             for(Map.Entry<String,ArrayList<Double>> TF_IDFAndOccurrences:wordObject.getTF_IDFandOccurrences().entrySet()){
                 URL=TF_IDFAndOccurrences.getKey().replace("__",".");
                 if(!pageTF_IDFScoreHashMap.containsKey(URL)){
@@ -59,7 +59,33 @@ public class PageRankerService {
     }
     private void printPageFinalScore(){
         for(Pair<String,Double> pair:sortedPageFinalScore){
+
             System.out.println(pair.getKey()+"\t"+pair.getValue());
         }
     }
 }
+
+
+
+
+
+// "The Dark Knight"
+// "Dark Knight Rises Best Movie IMDB"
+
+// HashMap<String, HashMap<String, List<Double>>>
+// List<Word> relevantWordsToQuery;
+// List<Word> relevantWordsToPhrase;
+
+// for url in urls:
+//      while matcher.find():
+//
+//      for word in relevantWordsToQuery:
+//          if word.TF_IDFandOccurrences.hasKey(url):
+//              relevantWordsToPhrase.add(word);
+//
+//
+// pageRanker.startRanking(relevantWordsToPhrase);
+
+
+
+
