@@ -13,21 +13,13 @@ import java.util.regex.Pattern;
 @Service
 public class QueryService {
     private final WordRepository wordRepository;
-    private final PageRepository pageRepository;
     private final WordProcessor wordProcessor;
-    private final PageRankerService pageRankerService;
-    private String query;
     @Autowired
-    public QueryService(WordRepository wordRepository, PageRepository pageRepository, PageRankerService pageRankerService) {
+    public QueryService(WordRepository wordRepository) {
         this.wordRepository = wordRepository;
-        this.pageRepository = pageRepository;
-        this.pageRankerService = pageRankerService;
         wordProcessor = new WordProcessor();
     }
-    public void setQueryToProcess(String query) {
-        this.query = query;
-    }
-    public void startProcessing() {
+    public List<Word> startProcessing(String query) {
         List<Word> relevantWords = new ArrayList<>();
         HashMap<String, Integer> queryWordPosition = new HashMap<>();
         Pattern pattern = Pattern.compile("\\w+");
@@ -45,6 +37,6 @@ public class QueryService {
             position++;
         }
 
-        pageRankerService.startRanking(relevantWords);
+        return relevantWords;
     }
 }
