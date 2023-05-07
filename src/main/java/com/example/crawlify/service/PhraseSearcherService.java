@@ -63,9 +63,7 @@ public class PhraseSearcherService {
                 // Remove the URL from all words
                 for (Word word : relevantWordsToQuery) {
                     HashMap<String, ArrayList<Double>> wordOccurrences = word.getTF_IDFandOccurrences();
-                    if (wordOccurrences.containsKey(url)) {
-                        wordOccurrences.remove(url);
-                    }
+                    wordOccurrences.remove(url);
                 }
             }
         }
@@ -82,4 +80,62 @@ public class PhraseSearcherService {
 
         return relevantWordsToQuery;
     }
+
+    public List<Word> startProcessing(List<String> queries, String operation) {
+        // Validate the input parameters
+        if (queries == null || queries.isEmpty() || operation == null || (!operation.equals("AND") && !operation.equals("OR") && !operation.equals("NOT"))) {
+            return new ArrayList<>();
+        }
+
+        // Initialize a list to store the results of each query
+        List<List<Word>> queryResults = new ArrayList<>();
+
+        // Iterate over the queries and call the queryService for each one
+        for (String query : queries) {
+            List<Word> relevantWordsToQuery = this.startProcessing(query);
+            queryResults.add(relevantWordsToQuery);
+        }
+
+        // Initialize a list to store the final result
+        List<Word> finalResult = new ArrayList<>();
+
+        // Perform the operation on the query results
+        switch (operation) {
+            case "AND" -> {
+                // Find the intersection of all query results
+                // Assume that the first query result is not empty
+                finalResult.addAll(queryResults.get(0));
+                // Iterate over the rest of the query results and remove any word that is not in common
+                for (int i = 1; i < queryResults.size(); i++) {
+                    List<Word> currentResult = queryResults.get(i);
+                    finalResult.removeIf(word -> !currentResult.contains(word));
+                }
+            }
+            case "OR" -> {
+                // Find the union of all query results
+                // Use a set to avoid duplicates
+                Set<Word> wordSet = new HashSet<>();
+                // Iterate over the query results and add all words to the set
+                for (List<Word> currentResult : queryResults) {
+                    wordSet.addAll(currentResult);
+                }
+                // Convert the set to a list
+                finalResult.addAll(wordSet);
+            }
+            case "NOT" -> {
+                // Assume that the first query result is not empty
+                finalResult.addAll(queryResults.get(0));
+                // Iterate over the rest of the query results and remove any word that is in common
+                for (int i = 1; i < queryResults.size(); i++) {
+                    List<Word> currentResult = queryResults.get(i);
+                    finalResult.removeIf(currentResult::contains);
+                }
+            }
+        }
+
+        return finalResult;
+    }
+
+
+
 }
