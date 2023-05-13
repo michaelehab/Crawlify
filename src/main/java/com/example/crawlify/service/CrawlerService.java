@@ -28,6 +28,7 @@ public class CrawlerService {
     private final ConcurrentHashMap<String, Boolean> visitedUrls = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> visitedPages = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<String> urlsToVisit = new ConcurrentLinkedQueue<>();
+    private final RobotsChecker robotsChecker = new RobotsChecker();
     private int maxPagesToCrawl;
     private int numThreads;
     private final AtomicInteger numOfCrawledPages = new AtomicInteger(0);
@@ -83,7 +84,7 @@ public class CrawlerService {
                 }
 
                 // Check if robots are allowed
-                if(!RobotsChecker.areRobotsAllowed(url)){
+                if(!robotsChecker.isUrlAllowedByRobotsTxt(url)){
                     continue;
                 }
 
