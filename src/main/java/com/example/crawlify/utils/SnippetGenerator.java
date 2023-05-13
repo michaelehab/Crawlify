@@ -71,6 +71,7 @@ public class SnippetGenerator {
             }
         }
 
+
         // Return the best snippet
         return bestSnippet;
     }

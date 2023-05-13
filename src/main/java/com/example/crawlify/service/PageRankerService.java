@@ -23,14 +23,14 @@ public class PageRankerService {
     public PageRankerService(PageRepository pageRepository){
         this.pageRepository = pageRepository;
     }
-    public List<SearchResult> startRanking(List<Word> wordObjectsFromDBList, List<String> queries){
-        sortedPageFinalScore=new ArrayList<>();
-        pageTF_IDFScoreHashMap=new HashMap<>();
+    public List<SearchResult> startRanking(List<Word> wordObjectsFromDBList, List<String> queries, int pageNumber){
+        sortedPageFinalScore = new ArrayList<>();
+        pageTF_IDFScoreHashMap = new HashMap<>();
         calculatePageFinalTF_IDF(wordObjectsFromDBList);
         calculatePageFinalTotalScore();
         sortPagesByFinalScore();
         printPageFinalScore();
-        return getSearchResults(queries);
+        return getSearchResults(queries, pageNumber);
     }
     private void calculatePageFinalTF_IDF(List<Word> relevantWords){
         String URL;
@@ -103,12 +103,23 @@ public class PageRankerService {
         return snippet;
     }
 
-    private List<SearchResult> getSearchResults(List<String> queries){
+    private List<SearchResult> getSearchResults(List<String> queries, int pageNumber){
         List<SearchResult> searchResults = new ArrayList<>();
-        for(Pair<String,Double> pair : sortedPageFinalScore) {
+        // Assuming pageNumber starts from 1
+        int startIndex = (pageNumber - 1) * 10; // The index of the first result to return
+        int endIndex = Math.min(startIndex + 10, sortedPageFinalScore.size()); // The index of the last result to return
+        for(int i = startIndex; i < endIndex; i++) {
+            Pair<String,Double> pair = sortedPageFinalScore.get(i);
             Page resultPage = pageRepository.findByUrl(pair.getKey());
-            searchResults.add(new SearchResult(resultPage.getTitle(), resultPage.getUrl(), SnippetGenerator.generateSnippet(resultPage.getHtml(), queries)));
+            String snippet = SnippetGenerator.generateSnippet(resultPage.getHtml(), queries);
+            if(!snippet.isEmpty()){
+                searchResults.add(new SearchResult(resultPage.getTitle(), resultPage.getUrl(), snippet));
+            }
+            else{
+                endIndex = Math.min(endIndex + 1, sortedPageFinalScore.size());
+            }
         }
+
         return searchResults;
     }
 }

@@ -5,6 +5,8 @@ import com.example.crawlify.service.PageRankerService;
 import com.example.crawlify.service.PhraseSearcherService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
@@ -27,7 +29,7 @@ public class SearchController {
     }
 
     @GetMapping
-    public List<SearchResult> startSearching(@RequestParam("query") String encodedSearchQuery, @RequestParam("page") Integer pageNumber, @RequestParam("ie") String ie) throws UnsupportedEncodingException {
+    public ResponseEntity<List<SearchResult>> startSearching(@RequestParam("query") String encodedSearchQuery, @RequestParam("page") int pageNumber, @RequestParam("ie") String ie) throws UnsupportedEncodingException {
         String searchQuery;
         if (ie.equals("UTF-8")){
             searchQuery = java.net.URLDecoder.decode(encodedSearchQuery, StandardCharsets.UTF_8);
@@ -77,11 +79,11 @@ public class SearchController {
             }
         }
 
-//        for(String s : strings){
-//            System.out.println(s);
-//        }
-
         List<Word> relevantWords = phraseSearcherService.startProcessing(strings, operation);
-        return pageRankerService.startRanking(relevantWords, strings);
+        List<SearchResult> searchResults = pageRankerService.startRanking(relevantWords, strings, pageNumber);
+        if (searchResults.isEmpty()){
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(searchResults, HttpStatus.OK);
     }
 }
