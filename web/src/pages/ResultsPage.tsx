@@ -59,6 +59,11 @@ function Results() {
         Search results for "{query}"
       </Heading>
       {isLoading && <Spinner size="xl" color="blue.300" />}
+      {data && (
+        <Heading size="sm" color="blue.700">
+          Search Took {data.searchTime} milliseconds
+        </Heading>
+      )}
       <Flex direction="column" align="center">
         {data &&
           data.results.length > 0 &&
