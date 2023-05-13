@@ -26,6 +26,7 @@ export async function callEndpoint<Request, Response>(
   method: string,
   request?: Request
 ): Promise<Response> {
+  console.log(`Sending request to ${endpoint}`);
   const requestBody = request ? JSON.stringify(request) : undefined;
   const response = await fetch(`${HOST}${endpoint}`, {
     method: method,

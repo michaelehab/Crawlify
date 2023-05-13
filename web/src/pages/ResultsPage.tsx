@@ -5,12 +5,11 @@ import {
   Box,
   Heading,
   Text,
-  Link,
   Spinner,
   ButtonGroup,
   Button,
   Center,
-} from "@chakra-ui/react"; // import Chakra UI components here
+} from "@chakra-ui/react";
 import { useTitle } from "../utils/useTitle";
 import { callEndpoint } from "../utils/callEndpoint";
 import { SearchRequest, SearchResponse } from "../api";
@@ -21,22 +20,36 @@ function Results() {
   useTitle(`${query}`);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const { data, error, isLoading } = useQuery([`list${query}Results`], () =>
-    callEndpoint<SearchRequest, SearchResponse>(
-      `/search?query=${query}&page=${page}&ie=UTF-8`,
-      "GET"
-    )
+  const [searchTime, setSearchTime] = useState("");
+
+  const { data, isLoading, refetch } = useQuery(
+    [`list${query}Results`, page],
+    () =>
+      callEndpoint<SearchRequest, SearchResponse>(
+        `/search?query=${query}&page=${page}&ie=UTF-8`,
+        "GET"
+      )
   );
+
+  useEffect(() => {
+    if (data) {
+      setTotalPages(data.totalPages);
+      setPage(data.currentPage);
+      setSearchTime(data.searchTime);
+    }
+  }, [data]);
 
   const handlePrev = () => {
     if (page > 1) {
       setPage(page - 1);
+      refetch();
     }
   };
 
   const handleNext = () => {
     if (page < totalPages) {
       setPage(page + 1);
+      refetch();
     }
   };
 
@@ -46,6 +59,7 @@ function Results() {
         Search results for "{query}"
       </Heading>
       {isLoading && <Spinner />}
+      {data && <Text>The search took {searchTime} milliseconds</Text>}
       {data &&
         data.results.length > 0 &&
         data.results.map((result, i) => <ResultCard key={i} {...result} />)}
