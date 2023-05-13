@@ -1,6 +1,6 @@
 import { ApiError } from "./apiError";
 
-const HOST = "http://localhost:8081/api/v1";
+const HOST = "http://localhost:8081";
 
 export const replaceParams = (
   endpoint: string,

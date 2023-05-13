@@ -1,5 +1,5 @@
-export interface Result {
-  title: String;
-  url: String;
-  snippet: String;
+export interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
 }

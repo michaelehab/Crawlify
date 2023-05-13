@@ -1,7 +1,8 @@
 import { Box, Text, Link, Heading } from "@chakra-ui/react";
-import { Result } from "../types";
+import { SearchResult } from "../types";
+import parse from "html-react-parser";
 
-export const ResultCard: React.FC<Result> = (result) => {
+export const ResultCard: React.FC<SearchResult> = (result) => {
   return (
     <Box p="2" m={5} border="1px solid gray">
       <Link href={`${result.url}`} color="blue.500">
@@ -10,7 +11,7 @@ export const ResultCard: React.FC<Result> = (result) => {
         </Heading>
       </Link>
       <Text>{result.url}</Text>
-      <Text>{result.snippet}</Text>
+      <Text>{parse(result.snippet)}</Text>
     </Box>
   );
 };

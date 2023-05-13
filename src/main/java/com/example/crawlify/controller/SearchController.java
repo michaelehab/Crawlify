@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+@CrossOrigin (origins = "http://localhost:3000")
 @RestController
 @RequestMapping({"/search"})
 public class SearchController {

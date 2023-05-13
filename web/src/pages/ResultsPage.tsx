@@ -23,7 +23,7 @@ function Results() {
   const [totalPages, setTotalPages] = useState(1);
   const { data, error, isLoading } = useQuery([`list${query}Results`], () =>
     callEndpoint<SearchRequest, SearchResponse>(
-      `/search/${query}?page=${page}`,
+      `/search?query=${query}&page=${page}&ie=UTF-8`,
       "GET"
     )
   );

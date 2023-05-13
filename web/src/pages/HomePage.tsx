@@ -13,7 +13,7 @@ function Home() {
 
   const handleSubmit = (event: any) => {
     event.preventDefault();
-    navigate(`/results/${query}`);
+    navigate(`/results/${encodeURI(query)}`);
   };
 
   return (
