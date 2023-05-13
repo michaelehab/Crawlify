@@ -8,10 +8,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Base64;
-import java.util.zip.GZIPOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 @Document(collection = "page")
 @Data
@@ -28,45 +27,19 @@ public class Page {
     private String html;
     private Integer popularity;
 
-    public String getCompactString() {
-        byte[] compressedHtml = null;
-
+    public String getSha256Hash() {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            try {
-                GZIPOutputStream gzos = new GZIPOutputStream(baos);
-
-                try {
-                    gzos.write(this.html.getBytes());
-                    gzos.finish();
-                    compressedHtml = baos.toByteArray();
-                } catch (Throwable var8) {
-                    try {
-                        gzos.close();
-                    } catch (Throwable var7) {
-                        var8.addSuppressed(var7);
-                    }
-
-                    throw var8;
-                }
-
-                gzos.close();
-            } catch (Throwable var9) {
-                try {
-                    baos.close();
-                } catch (Throwable var6) {
-                    var9.addSuppressed(var6);
-                }
-
-                throw var9;
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(html.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
             }
-
-            baos.close();
-        } catch (IOException var10) {
-            var10.printStackTrace();
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-
-        return Base64.getEncoder().encodeToString(compressedHtml);
     }
 }

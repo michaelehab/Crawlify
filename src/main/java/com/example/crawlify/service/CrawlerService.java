@@ -122,8 +122,9 @@ public class CrawlerService {
                         Page page = Page.builder().url(url).canonicalUrl(canonicalUrl).title(title).html(html).popularity(1).build();
 
                         // Check page content
-                        String compactString = page.getCompactString();
-                        if (visitedPages.putIfAbsent(compactString, true) != null){
+                        String pageSha256Hash = page.getSha256Hash();
+                        if (visitedPages.putIfAbsent(pageSha256Hash, true) != null){
+                            System.out.println("Visited the page with title: "  + title + " before!");
                             continue;
                         }
 
@@ -134,10 +135,7 @@ public class CrawlerService {
                         Elements links = document.select("a[href]");
                         for (Element link : links) {
                             String nextUrl = link.absUrl("href");
-                            String normalizedNextUrl = UrlNormalizer.normalize(nextUrl);
-                            if (visitedUrls.get(normalizedNextUrl) == null) {
-                                urlsToVisit.offer(nextUrl);
-                            }
+                            urlsToVisit.offer(nextUrl);
                         }
                     }
                     else {
