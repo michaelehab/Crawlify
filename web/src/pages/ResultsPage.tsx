@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import {
-  Box,
+  Container,
   Heading,
   Text,
   Spinner,
-  ButtonGroup,
-  Button,
-  Center,
+  Flex,
+  IconButton,
 } from "@chakra-ui/react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { useTitle } from "../utils/useTitle";
 import { callEndpoint } from "../utils/callEndpoint";
 import { SearchRequest, SearchResponse } from "../api";
@@ -54,29 +54,34 @@ function Results() {
   };
 
   return (
-    <Box maxW="800px" mx="auto" p="5">
-      <Heading as="h1" mb="2">
+    <Container maxW="800px" p="5">
+      <Heading as="h1" mb="2" size="lg" color="blue.600">
         Search results for "{query}"
       </Heading>
-      {isLoading && <Spinner />}
-      {data && <Text>The search took {searchTime} milliseconds</Text>}
-      {data &&
-        data.results.length > 0 &&
-        data.results.map((result, i) => <ResultCard key={i} {...result} />)}
-      <Center>
-        <ButtonGroup mt="2">
-          <Button onClick={handlePrev} disabled={page === 1}>
-            Prev
-          </Button>
-          <Text>
+      {isLoading && <Spinner size="xl" color="blue.300" />}
+      <Flex direction="column" align="center">
+        {data &&
+          data.results.length > 0 &&
+          data.results.map((result, i) => <ResultCard key={i} {...result} />)}
+        <Flex mt="2">
+          <IconButton
+            onClick={handlePrev}
+            disabled={page === 1}
+            icon={<ChevronLeftIcon />}
+            aria-label="Previous page"
+          />
+          <Text mx="2">
             Page {page} of {totalPages}
           </Text>
-          <Button onClick={handleNext} disabled={page === totalPages}>
-            Next
-          </Button>
-        </ButtonGroup>
-      </Center>
-    </Box>
+          <IconButton
+            onClick={handleNext}
+            disabled={page === totalPages}
+            icon={<ChevronRightIcon />}
+            aria-label="Next page"
+          />
+        </Flex>
+      </Flex>
+    </Container>
   );
 }
 
