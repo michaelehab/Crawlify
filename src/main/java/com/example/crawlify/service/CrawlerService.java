@@ -28,6 +28,7 @@ public class CrawlerService {
     private final ConcurrentHashMap<String, Boolean> visitedUrls = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> visitedPages = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<String> urlsToVisit = new ConcurrentLinkedQueue<>();
+    private final RobotsChecker robotsChecker = new RobotsChecker();
     private int maxPagesToCrawl;
     private int numThreads;
     private final AtomicInteger numOfCrawledPages = new AtomicInteger(0);
@@ -42,8 +43,12 @@ public class CrawlerService {
 
     public void startCrawling(List<String> seeds) {
         numOfCrawledPages.set(0);
-        // Add seeds to the queue
-        urlsToVisit.addAll(seeds);
+
+        for (String seed : seeds){
+            if (visitedUrls.get(seed) == null) {
+                urlsToVisit.offer(seed);
+            }
+        }
 
         // Start crawling threads
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
@@ -83,7 +88,7 @@ public class CrawlerService {
                 }
 
                 // Check if robots are allowed
-                if(!RobotsChecker.areRobotsAllowed(url)){
+                if(!robotsChecker.isUrlAllowedByRobotsTxt(url)){
                     continue;
                 }
 
@@ -112,13 +117,14 @@ public class CrawlerService {
 
                         // Parse HTML content
                         String title = document.title();
-                        String html = document.body().html();
+                        String html = document.html();
 
                         Page page = Page.builder().url(url).canonicalUrl(canonicalUrl).title(title).html(html).popularity(1).build();
 
                         // Check page content
-                        String compactString = page.getCompactString();
-                        if (visitedPages.putIfAbsent(compactString, true) != null){
+                        String pageSha256Hash = page.getSha256Hash();
+                        if (visitedPages.putIfAbsent(pageSha256Hash, true) != null){
+                            System.out.println("Visited the page with title: "  + title + " before!");
                             continue;
                         }
 
@@ -129,10 +135,7 @@ public class CrawlerService {
                         Elements links = document.select("a[href]");
                         for (Element link : links) {
                             String nextUrl = link.absUrl("href");
-                            String normalizedNextUrl = UrlNormalizer.normalize(nextUrl);
-                            if (visitedUrls.get(normalizedNextUrl) == null) {
-                                urlsToVisit.offer(nextUrl);
-                            }
+                            urlsToVisit.offer(nextUrl);
                         }
                     }
                     else {

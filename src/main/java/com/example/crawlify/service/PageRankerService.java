@@ -1,9 +1,12 @@
 package com.example.crawlify.service;
 
 import com.example.crawlify.model.Page;
+import com.example.crawlify.model.SearchResult;
 import com.example.crawlify.model.Word;
 import java.util.*;
+
 import com.example.crawlify.repository.PageRepository;
+import com.example.crawlify.utils.SnippetGenerator;
 import javafx.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,13 +20,14 @@ public class PageRankerService {
     public PageRankerService(PageRepository pageRepository){
         this.pageRepository = pageRepository;
     }
-    public void startRanking(List<Word> wordObjectsFromDBList ){
-        sortedPageFinalScore=new ArrayList<>();
-        pageTF_IDFScoreHashMap=new HashMap<>();
+    public List<SearchResult> startRanking(List<Word> wordObjectsFromDBList, List<String> queries, int pageNumber){
+        sortedPageFinalScore = new ArrayList<>();
+        pageTF_IDFScoreHashMap = new HashMap<>();
         calculatePageFinalTF_IDF(wordObjectsFromDBList);
         calculatePageFinalTotalScore();
         sortPagesByFinalScore();
         printPageFinalScore();
+        return getSearchResults(queries, pageNumber);
     }
     private void calculatePageFinalTF_IDF(List<Word> relevantWords){
         String URL;
@@ -45,12 +49,12 @@ public class PageRankerService {
         Page page;
         int pagePopularity;
         double pageFinalScore,pageTF_IDF;
-        for(Map.Entry<String,Double>pairOfURLAndTF_IDF:pageTF_IDFScoreHashMap.entrySet()){
-            pageTF_IDF=pairOfURLAndTF_IDF.getValue();
-            page=pageRepository.findByUrl(pairOfURLAndTF_IDF.getKey());
-            pagePopularity=page.getPopularity();
-            pageFinalScore=(pagePopularity*pageTF_IDF)/(pagePopularity+pageTF_IDF);
-            Pair<String,Double> pair=new Pair<>(pairOfURLAndTF_IDF.getKey(),pageFinalScore);
+        for(Map.Entry<String,Double>pairOfURLAndTF_IDF : pageTF_IDFScoreHashMap.entrySet()){
+            pageTF_IDF = pairOfURLAndTF_IDF.getValue();
+            page = pageRepository.findByCanonicalUrl(pairOfURLAndTF_IDF.getKey());
+            pagePopularity = page.getPopularity();
+            pageFinalScore = (pagePopularity*pageTF_IDF)/(pagePopularity+pageTF_IDF);
+            Pair<String,Double> pair = new Pair<>(pairOfURLAndTF_IDF.getKey(),pageFinalScore);
             sortedPageFinalScore.add(pair);
         }
     }
@@ -63,29 +67,24 @@ public class PageRankerService {
             System.out.println(pair.getKey()+"\t"+pair.getValue());
         }
     }
+
+    private List<SearchResult> getSearchResults(List<String> queries, int pageNumber){
+        List<SearchResult> searchResults = new ArrayList<>();
+        // Assuming pageNumber starts from 1
+        int startIndex = (pageNumber - 1) * 10; // The index of the first result to return
+        int endIndex = Math.min(startIndex + 10, sortedPageFinalScore.size()); // The index of the last result to return
+        for(int i = startIndex; i < endIndex; i++) {
+            Pair<String,Double> pair = sortedPageFinalScore.get(i);
+            Page resultPage = pageRepository.findByCanonicalUrl(pair.getKey());
+            String snippet = SnippetGenerator.generateSnippet(resultPage.getHtml(), queries);
+            if(!snippet.isEmpty()){
+                searchResults.add(new SearchResult(resultPage.getTitle(), resultPage.getUrl(), snippet));
+            }
+            else{
+                endIndex = Math.min(endIndex + 1, sortedPageFinalScore.size());
+            }
+        }
+
+        return searchResults;
+    }
 }
-
-
-
-
-
-// "The Dark Knight"
-// "Dark Knight Rises Best Movie IMDB"
-
-// HashMap<String, HashMap<String, List<Double>>>
-// List<Word> relevantWordsToQuery;
-// List<Word> relevantWordsToPhrase;
-
-// for url in urls:
-//      while matcher.find():
-//
-//      for word in relevantWordsToQuery:
-//          if word.TF_IDFandOccurrences.hasKey(url):
-//              relevantWordsToPhrase.add(word);
-//
-//
-// pageRanker.startRanking(relevantWordsToPhrase);
-
-
-
-
