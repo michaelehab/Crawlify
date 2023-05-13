@@ -43,8 +43,12 @@ public class CrawlerService {
 
     public void startCrawling(List<String> seeds) {
         numOfCrawledPages.set(0);
-        // Add seeds to the queue
-        urlsToVisit.addAll(seeds);
+
+        for (String seed : seeds){
+            if (visitedUrls.get(seed) == null) {
+                urlsToVisit.offer(seed);
+            }
+        }
 
         // Start crawling threads
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
@@ -113,7 +117,7 @@ public class CrawlerService {
 
                         // Parse HTML content
                         String title = document.title();
-                        String html = document.body().html();
+                        String html = document.html();
 
                         Page page = Page.builder().url(url).canonicalUrl(canonicalUrl).title(title).html(html).popularity(1).build();
 

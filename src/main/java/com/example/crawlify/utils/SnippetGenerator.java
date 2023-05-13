@@ -3,68 +3,88 @@ package com.example.crawlify.utils;
 import java.util.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class SnippetGenerator {
 
-    // A constant for the maximum length of the snippet
-    public static final int snippetSize = 160;
+    // A private final data member for the snippet size
+    private static final int N = 200;
 
-    // A method to generate a snippet given an html body text and a list of strings
+    // A method that takes in a string html and a list of strings words
+    // and returns a snippet of size N from the html that has at least one word from the words list and in bold
     public static String generateSnippet(String html, List<String> words) {
+        // Create a set of words for faster lookup
+        Set<String> wordSet = new HashSet<>(words);
 
-        Document doc = Jsoup.parse(html); //parse the HTML document
-        String text = doc.text(); //get the text content
-        String[] sentences = text.split("\\.\\s+"); //split into sentences
-        StringBuilder snippet = new StringBuilder(); //create a StringBuilder object
-        int matchedWords = 0; //keep track of how many words have been matched
-        boolean firstSentence = true; //flag to indicate if it is the first sentence
+        // Parse the html string using Jsoup
+        Document doc = Jsoup.parse(html);
 
-        for (String sentence : sentences) { //loop through the sentences
-            for (String word : words) { //loop through the words
-                if (sentence.toLowerCase().contains(word.toLowerCase())) { //check if the sentence contains the word
-                    matchedWords++; //increment the matched words count
-                    break; //break out of the inner loop
+        // Get the body element from the document
+        Element body = doc.body();
+
+        // Get all the elements from the body element
+        Elements elements = body.getAllElements();
+
+        // Initialize the best snippet and its score
+        String bestSnippet = "";
+        int bestScore = 0;
+
+        // Loop through all possible start and end indices of the snippet
+        for (int start = 0; start < elements.size(); start++) {
+            for (int end = start; end < elements.size(); end++) {
+                // Get the current snippet and its text length
+                StringBuilder snippet = new StringBuilder();
+                int textLength = 0;
+                for (int i = start; i <= end; i++) {
+                    Element element = elements.get(i);
+                    snippet.append(element.text()).append(" ");
+                    textLength += element.text().length() + 1;
                 }
-            }
-            if (matchedWords > 0) { //if the sentence contains any of the words
-                if (snippet.length() + sentence.length() + 1 > snippetSize) { //if adding the sentence will exceed the snippet size
-                    snippet.setLength(snippetSize - 3); //trim the snippet to fit
-                    snippet.append("..."); //add dots at the end
-                    break; //break out of the outer loop
-                } else { //if adding the sentence will not exceed the snippet size
-                    if (!firstSentence) { //if it is not the first sentence
-                        snippet.append(". "); //add a dot and a space before adding the sentence
+
+                // If the text length is greater than N, break the inner loop
+                if (textLength > N) {
+                    break;
+                }
+
+                // Calculate the score of the current snippet
+                int score = 0;
+                for (String word : wordSet) {
+                    // If the snippet contains the word case insensitively, increase the score by 1
+                    if (snippet.toString().toLowerCase().contains(word.toLowerCase())) {
+                        score++;
                     }
-                    snippet.append(sentence); //add the sentence to the snippet
+                }
+
+                // If the score is greater than the best score, update the best snippet and its score
+                if (score > bestScore) {
+                    bestSnippet = snippet.toString();
+                    bestScore = score;
                 }
             }
-            firstSentence = false; //set the flag to false after processing the first sentence
         }
 
-        if (!text.startsWith(sentences[0])) { //if the first sentence does not start from the beginning of the text content
-            snippet.insert(0, "..."); //add dots at the beginning of the snippet
+        // If the best snippet is not empty, bold the words that are in the word set case insensitively using <b> and </b> tags
+        if (!bestSnippet.isEmpty()) {
+            for (String word : wordSet) {
+                bestSnippet = bestSnippet.replaceAll("(?i)" + word, "<b>" + word + "</b>");
+            }
         }
 
-        for (String word : words) { //loop through the words again
-            int start = snippet.indexOf(word);
-            int end = start + word.length();
-            snippet.replace(start, end, "<b>" + word + "</b>");
-        }
-
-        return snippet.toString(); //return the snippet as a String
+        // Return the best snippet
+        return bestSnippet;
     }
 
-    // A main method for testing
+    // A main method to test the snippet generator
     public static void main(String[] args) {
+        // A sample html string
+        String html = "<p>This is a paragraph with some <b>bold</b> text and some <i>italic</i> text.</p><p>This is another paragraph with some <u>underlined</u> text and some <s>strikethrough</s> text.</p>";
 
-        // A sample html body text
-        String html = "<html><head><title>Snippet Generator</title></head><body><h1>Snippet Generator</h1><p>This is a java function to generate google like snippets of webpages, given an html body text string of a webpage and a list of strings where each string can have spaces, I want to generate a snippet of length N that has occurences of words from the list, and each word in the list should be bold in the snippet, the snippet may start or end with dots if it's in the middle of the html</p></body></html>";
+        // A sample list of words
+        List<String> words = Arrays.asList("paragraph", "text and", "italic");
 
-        // A sample list of strings
-        List<String> list = Arrays.asList("java", "snippet", "html", "webpage");
-
-        // Generate and print the snippet
-        String snippet = generateSnippet(html, list);
+        // Call the generateSnippet method and print the result
+        String snippet = SnippetGenerator.generateSnippet(html, words);
         System.out.println(snippet);
     }
 }

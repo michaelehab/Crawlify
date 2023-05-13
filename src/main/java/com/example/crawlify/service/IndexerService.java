@@ -16,8 +16,9 @@ public class IndexerService {
     private int numThreads;
     private final WordRepository wordRepository;
     private final PageRepository pageRepository;
+    @Autowired
     public IndexerService(WordRepository wordRepository,PageRepository pageRepository){
-        this.pageRepository=pageRepository;
+        this.pageRepository = pageRepository;
         this.wordRepository = wordRepository;
     }
     public void setIndexerThreads(int numThreads) {
@@ -26,7 +27,7 @@ public class IndexerService {
 
     public void startIndexing(){
         List<Page> pageList = pageRepository.findAll();
-        IndexerThread indexerThread=new IndexerThread(pageList);
+        IndexerThread indexerThread = new IndexerThread(pageList);
         Thread[] threads = new Thread[numThreads];
 
         for (int i = 0; i < numThreads; i++) {
@@ -43,28 +44,19 @@ public class IndexerService {
         }
 
         indexerThread.calculateTF_IDF(pageList.size());
-       // System.out.println("get word ten "+wordRepository.findByword("ten"));
     }
 
     private class IndexerThread implements Runnable {
-        private int totalNoWordsInADocument;
+        private int totalNoWordsInADocument = 0;
         private final List<Page> pageList;
-        private final List<String> words;
-        private final WordProcessor wordProcessor;
-
-        private final HashMap<String, Integer> wordFrequency;
-        private static HashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex;
-
-
+        private final List<String> words = new ArrayList<>();
+        private final WordProcessor wordProcessor = new WordProcessor();
+        private final HashMap<String, Integer> wordFrequency = new HashMap<>();
+        private static final HashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex = new HashMap<>();
 
         @Autowired
         public  IndexerThread(List<Page> pageList) {
-            wordFrequency = new HashMap<>();
-            invertedIndex = new HashMap<>();
-            wordProcessor=new WordProcessor();
-            this.pageList=pageList;
-            words = new ArrayList<>();
-            totalNoWordsInADocument = 0;
+            this.pageList = pageList;
         }
 
         public void calculateTF_IDF(int totalNoOfDocuments) {
@@ -86,8 +78,6 @@ public class IndexerService {
                 wordRepository.save(wordInDB);
 
             }
-
-
         }
 
         public void run() {
@@ -104,8 +94,6 @@ public class IndexerService {
                 Matcher matcher = createMatcherFromHTML(html);
                 processWords(matcher,URL);
                 calculateTF(URL);
-              //  print();
-
             }
         }
 
@@ -113,11 +101,11 @@ public class IndexerService {
             double position=0;
             while (matcher.find()) {
                 totalNoWordsInADocument++;
-                String word =wordProcessor.changeWordToLowercase(matcher.group());
+                String word = wordProcessor.changeWordToLowercase(matcher.group()).toLowerCase();
                 if (!Objects.equals(wordProcessor.removeStopWords(word), "")) {
                     word = wordProcessor.wordStemmer(word);
                     calculateWordFrequency(word);
-                    addToInvertedIndex(word,URL,position);
+                    addToInvertedIndex(word, URL, position);
                     words.add(word);
                 }
                 position++;
@@ -129,10 +117,6 @@ public class IndexerService {
             Pattern pattern = Pattern.compile("\\w+");
             return pattern.matcher(htmlContent);
         }
-
-
-
-
         private void calculateWordFrequency(String word) {
             if (wordFrequency.containsKey(word))
                 wordFrequency.put(word, wordFrequency.get(word) + 1);
@@ -142,12 +126,8 @@ public class IndexerService {
         private void calculateTF(String URL) {
             for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
                 double TF = (double) entry.getValue() / totalNoWordsInADocument;
-                if (invertedIndex.get(entry.getKey()) != null) {
-                    ArrayList<Double> positionList = invertedIndex.get(entry.getKey()).get(URL);
-                    if (positionList != null) {
-                        positionList.set(0, TF);
-                    }
-                }
+                Optional<ArrayList<Double>> positionList = Optional.ofNullable(invertedIndex.get(entry.getKey())).map(map -> map.get(URL));
+                positionList.ifPresent(list -> list.set(0, TF));
             }
         }
 
@@ -180,9 +160,7 @@ public class IndexerService {
             System.out.println("Word Frequency" + wordFrequency);
             System.out.println("Inverted index " + invertedIndex);
         }
-
     }
-
-    }
+}
 
 
