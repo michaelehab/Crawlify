@@ -1,5 +1,6 @@
 package com.example.crawlify.service;
 
+import com.example.crawlify.controller.ResultsResponse;
 import com.example.crawlify.model.Page;
 import com.example.crawlify.model.SearchResult;
 import com.example.crawlify.model.Word;
@@ -20,7 +21,7 @@ public class PageRankerService {
     public PageRankerService(PageRepository pageRepository){
         this.pageRepository = pageRepository;
     }
-    public List<SearchResult> startRanking(List<Word> wordObjectsFromDBList, List<String> queries, int pageNumber){
+    public ResultsResponse startRanking(List<Word> wordObjectsFromDBList, List<String> queries, int pageNumber){
         sortedPageFinalScore = new ArrayList<>();
         pageTF_IDFScoreHashMap = new HashMap<>();
         calculatePageFinalTF_IDF(wordObjectsFromDBList);
@@ -68,7 +69,7 @@ public class PageRankerService {
         }
     }
 
-    private List<SearchResult> getSearchResults(List<String> queries, int pageNumber){
+    private ResultsResponse getSearchResults(List<String> queries, int pageNumber){
         List<SearchResult> searchResults = new ArrayList<>();
         // Assuming pageNumber starts from 1
         int startIndex = (pageNumber - 1) * 10; // The index of the first result to return
@@ -85,6 +86,6 @@ public class PageRankerService {
             }
         }
 
-        return searchResults;
+        return ResultsResponse.builder().results(searchResults).currentPage(pageNumber).totalPages((int) Math.ceil(sortedPageFinalScore.size() / 10.0)).build();
     }
 }

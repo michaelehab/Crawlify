@@ -1,5 +1,5 @@
 package com.example.crawlify.controller;
-import com.example.crawlify.model.SearchResult;
+
 import com.example.crawlify.model.Word;
 import com.example.crawlify.service.PageRankerService;
 import com.example.crawlify.service.PhraseSearcherService;
@@ -29,7 +29,8 @@ public class SearchController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SearchResult>> startSearching(@RequestParam("query") String encodedSearchQuery, @RequestParam("page") int pageNumber, @RequestParam("ie") String ie) throws UnsupportedEncodingException {
+    public ResponseEntity<ResultsResponse> startSearching(@RequestParam("query") String encodedSearchQuery, @RequestParam("page") int pageNumber, @RequestParam("ie") String ie) throws UnsupportedEncodingException {
+        long startTime = System.nanoTime();
         String searchQuery;
         if (ie.equals("UTF-8")){
             searchQuery = java.net.URLDecoder.decode(encodedSearchQuery, StandardCharsets.UTF_8);
@@ -80,10 +81,16 @@ public class SearchController {
         }
 
         List<Word> relevantWords = phraseSearcherService.startProcessing(strings, operation);
-        List<SearchResult> searchResults = pageRankerService.startRanking(relevantWords, strings, pageNumber);
-        if (searchResults.isEmpty()){
+        ResultsResponse searchResults = pageRankerService.startRanking(relevantWords, strings, pageNumber);
+        long endTime = System.nanoTime ();
+        Double milliSecondsTook = (double) ((endTime - startTime) / 1000000);
+
+        searchResults.setSearchTime(milliSecondsTook);
+
+        if (searchResults.getResults().isEmpty()){
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
+
         return new ResponseEntity<>(searchResults, HttpStatus.OK);
     }
 }
