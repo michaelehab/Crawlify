@@ -54,7 +54,6 @@ public class IndexerService {
         private final HashMap<String, Integer> wordFrequency = new HashMap<>();
         private static final HashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex = new HashMap<>();
 
-        @Autowired
         public  IndexerThread(List<Page> pageList) {
             this.pageList = pageList;
         }
@@ -72,11 +71,17 @@ public class IndexerService {
                     documentName = document.getKey();
                     TF = document.getValue().get(0);
                     invertedIndex.get(word).get(documentName).set(0,TF*IDF);
-
                 }
-                Word wordInDB=Word.builder().word(word).TF_IDFandOccurrences(invertedIndex.get(word)).build();
-                wordRepository.save(wordInDB);
 
+                Optional<Word> existingWord = wordRepository.findByword(word);
+                if(existingWord.isPresent()){
+                    existingWord.get().setTF_IDFandOccurrences(invertedIndex.get(word));
+                    wordRepository.save(existingWord.get());
+                }
+                else{
+                    Word wordInDB = Word.builder().word(word).TF_IDFandOccurrences(invertedIndex.get(word)).build();
+                    wordRepository.save(wordInDB);
+                }
             }
         }
 
@@ -85,12 +90,12 @@ public class IndexerService {
             int start = id * (pageList.size() / numThreads);
             int end = start + (pageList.size() / numThreads);
             if (pageList.size() % numThreads != 0 && id == numThreads - 1) end++;
-            String html,URL;
+            String html, URL;
             for (int i = start; i < end; i++) {
                 html = pageList.get(i).getHtml();
                 if (html == null) return;
-                URL=pageList.get(i).getUrl();
-                URL=URL.replace(".","__");
+                URL = pageList.get(i).getCanonicalUrl();
+                URL = URL.replace(".","__");
                 Matcher matcher = createMatcherFromHTML(html);
                 processWords(matcher,URL);
                 calculateTF(URL);
