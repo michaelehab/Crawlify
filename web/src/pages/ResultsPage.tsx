@@ -14,6 +14,7 @@ import { useTitle } from "../utils/useTitle";
 import { callEndpoint } from "../utils/callEndpoint";
 import { SearchRequest, SearchResponse } from "../api";
 import { ResultCard } from "../components/resultCard";
+import Navigation from "../components/navigation";
 
 function Results() {
   const { query } = useParams();
@@ -22,7 +23,7 @@ function Results() {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTime, setSearchTime] = useState("");
 
-  const { data, isLoading, refetch } = useQuery(
+  const { data, isLoading, refetch } = useQuery<SearchResponse, string>(
     [`list${query}Results`, page],
     () =>
       callEndpoint<SearchRequest, SearchResponse>(
@@ -54,39 +55,42 @@ function Results() {
   };
 
   return (
-    <Container maxW="800px" p="5">
-      <Heading as="h1" mb="2" size="lg" color="blue.600">
-        Search results for "{query}"
-      </Heading>
-      {isLoading && <Spinner size="xl" color="blue.300" />}
-      {data && (
-        <Heading size="sm" color="blue.700">
-          Search Took {data.searchTime} milliseconds
+    <>
+      <Navigation />
+      <Container maxW="800px" p="5">
+        <Heading as="h1" mb="2" size="lg" color="blue.600">
+          Search results for "{query}"
         </Heading>
-      )}
-      <Flex direction="column" align="center">
-        {data &&
-          data.results.length > 0 &&
-          data.results.map((result, i) => <ResultCard key={i} {...result} />)}
-        <Flex mt="2">
-          <IconButton
-            onClick={handlePrev}
-            disabled={page === 1}
-            icon={<ChevronLeftIcon />}
-            aria-label="Previous page"
-          />
-          <Text mx="2">
-            Page {page} of {totalPages}
-          </Text>
-          <IconButton
-            onClick={handleNext}
-            disabled={page === totalPages}
-            icon={<ChevronRightIcon />}
-            aria-label="Next page"
-          />
+        {isLoading && <Spinner size="xl" color="blue.300" />}
+        {data && (
+          <Heading size="sm" color="blue.700">
+            Search Took {searchTime} milliseconds
+          </Heading>
+        )}
+        <Flex direction="column" align="center">
+          {data &&
+            data.results.length > 0 &&
+            data.results.map((result, i) => <ResultCard key={i} {...result} />)}
+          <Flex mt="2">
+            <IconButton
+              onClick={handlePrev}
+              disabled={page === 1}
+              icon={<ChevronLeftIcon />}
+              aria-label="Previous page"
+            />
+            <Text mx="2">
+              Page {page} of {totalPages}
+            </Text>
+            <IconButton
+              onClick={handleNext}
+              disabled={page === totalPages}
+              icon={<ChevronRightIcon />}
+              aria-label="Next page"
+            />
+          </Flex>
         </Flex>
-      </Flex>
-    </Container>
+      </Container>
+    </>
   );
 }
 

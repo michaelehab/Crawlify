@@ -4,11 +4,13 @@ import Results from "./pages/ResultsPage";
 
 export const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/results/:query" element={<Results />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/results/:query" element={<Results />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 };

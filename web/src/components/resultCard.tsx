@@ -1,5 +1,4 @@
 import {
-  Box,
   Text,
   Link,
   Heading,
@@ -30,6 +29,7 @@ export const ResultCard: React.FC<SearchResult> = (result) => {
           <Heading size="sm" color="blue.500">
             {websiteName}
           </Heading>
+
           <Link href={`${result.url}`} color="blue.500">
             <Heading as="h2" size="md">
               {result.title}

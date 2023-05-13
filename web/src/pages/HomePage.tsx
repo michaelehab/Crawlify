@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Center, Image, Input, Button } from "@chakra-ui/react";
 import logo from "../assets/logo/logo-black-no-background.png";
@@ -18,7 +18,7 @@ function Home() {
 
   return (
     <Center h="100vh" flexDirection={"column"}>
-      <Image borderRadius="md" src={logo} alt="logo" height={"50vh"} />{" "}
+      <Image borderRadius="md" src={logo} alt="logo" height={"50vh"} />
       <Box as="form" onSubmit={handleSubmit} mt={10} display="flex">
         <Input
           type="text"
