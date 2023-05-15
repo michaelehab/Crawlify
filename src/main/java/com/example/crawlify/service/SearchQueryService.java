@@ -39,7 +39,7 @@ public class SearchQueryService {
     }
 
     public List<SearchQuery> findPopularQueriesByText(String text) {
-        PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "popularity"));
+        PageRequest pageRequest = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "popularity"));
         String regexString = "^" + text;
         return searchQueryRepository.findByQueryTextRegex(regexString, pageRequest).getContent();
     }
