@@ -26,15 +26,20 @@ public class IndexerService {
     }
 
     public void startIndexing(){
-        List<Page> pageList = pageRepository.findAll();
+        List<Page> pageList = pageRepository.findUnindexedPages();
+        if(pageList.isEmpty()) return;
+
         IndexerThread indexerThread = new IndexerThread(pageList);
         Thread[] threads = new Thread[numThreads];
 
         for (int i = 0; i < numThreads; i++) {
-            threads[i] = new Thread(new IndexerThread(pageList));
+            int start = i * pageList.size() / numThreads;
+            int end = (i + 1) * pageList.size() / numThreads;
+            threads[i] = new Thread(new IndexerThread(pageList.subList(start, end)));
             threads[i].setName(Integer.toString(i));
             threads[i].start();
         }
+        
         for (int i = 0; i < numThreads; i++) {
             try {
                 threads[i].join();
@@ -86,20 +91,18 @@ public class IndexerService {
         }
 
         public void run() {
-            int id = Integer.parseInt(Thread.currentThread().getName());
-            int start = id * (pageList.size() / numThreads);
-            int end = start + (pageList.size() / numThreads);
-            if (pageList.size() % numThreads != 0 && id == numThreads - 1) end++;
-            String html, URL;
-            for (int i = start; i < end; i++) {
-                html = pageList.get(i).getHtml();
+            for (Page currPage : pageList) {
+                String html = currPage.getHtml();
                 if (html == null) return;
-                URL = pageList.get(i).getCanonicalUrl();
-                URL = URL.replace(".","__");
+                String URL = currPage.getCanonicalUrl();
+                URL = URL.replace(".", "__");
                 Matcher matcher = createMatcherFromHTML(html);
-                processWords(matcher,URL);
+                processWords(matcher, URL);
                 calculateTF(URL);
+                currPage.setIsIndexed(true);
             }
+            // Update the isIndexed flag of the indexed pages
+            pageRepository.saveAll(pageList);
         }
 
         private void processWords(Matcher matcher,String URL) {

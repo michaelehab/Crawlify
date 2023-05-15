@@ -125,7 +125,7 @@ public class CrawlerService {
                         String title = document.title();
                         String html = document.html();
 
-                        Page page = Page.builder().url(url).canonicalUrl(canonicalUrl).title(title).html(html).popularity(1).build();
+                        Page page = Page.builder().url(url).canonicalUrl(canonicalUrl).title(title).html(html).popularity(1).isIndexed(false).build();
 
                         // Check page content
                         String pageSha256Hash = page.getSha256Hash();

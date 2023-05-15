@@ -26,6 +26,7 @@ public class Page {
     private String title;
     private String html;
     private Integer popularity;
+    private Boolean isIndexed;
 
     public String getSha256Hash() {
         try {
