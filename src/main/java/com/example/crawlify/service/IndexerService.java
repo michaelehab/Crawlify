@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class IndexerService {
     private int numThreads;
+    private int totalNoOfPages;
     private final WordRepository wordRepository;
     private final PageRepository pageRepository;
     private static final ConcurrentHashMap<String, HashMap<String, ArrayList<Double>>> invertedIndex = new ConcurrentHashMap<>();
@@ -30,6 +31,7 @@ public class IndexerService {
 
     public void startIndexing(){
         List<Page> pageList = pageRepository.findUnindexedPages();
+        totalNoOfPages=pageList.size();
         if(pageList.isEmpty()) return;
 
         Thread[] threads = new Thread[numThreads];
@@ -50,34 +52,27 @@ public class IndexerService {
             }
         }
 
-        calculateTF_IDF(pageList.size());
-    }
-    public void calculateTF_IDF(int totalNoOfDocuments) {
-        String word, documentName;
-        HashMap<String,ArrayList< Double>> innerMap;
-        double IDF, TF;
-        for (Map.Entry<String, HashMap<String,ArrayList< Double>>> entry : invertedIndex.entrySet()) {
-            word = entry.getKey();
+        Thread[] scoringThreads = new Thread[numThreads];
 
-            innerMap = entry.getValue();
-            IDF = Math.log(totalNoOfDocuments / (double) innerMap.size());
-            for (Map.Entry<String, ArrayList<Double>> document : entry.getValue().entrySet()) {
-                documentName = document.getKey();
-                TF = document.getValue().get(0);
-                invertedIndex.get(word).get(documentName).set(0,TF*IDF);
-            }
 
-            Optional<Word> existingWord = wordRepository.findByword(word);
-            if(existingWord.isPresent()){
-                existingWord.get().setTF_IDFandOccurrences(invertedIndex.get(word));
-                wordRepository.save(existingWord.get());
-            }
-            else{
-                Word wordInDB = Word.builder().word(word).TF_IDFandOccurrences(invertedIndex.get(word)).build();
-                wordRepository.save(wordInDB);
+        for (int i = 0; i < numThreads; i++) {
+            ArrayList<String> invertedIndexWords = new ArrayList<>(invertedIndex.keySet());
+            int start = i * invertedIndexWords.size() / numThreads;
+            int end = (i + 1) * invertedIndexWords.size() / numThreads;
+            scoringThreads[i] = new Thread(new ScoringThread(invertedIndexWords.subList(start, end)));
+            scoringThreads[i].setName(Integer.toString(i));
+            scoringThreads[i].start();
+        }
+        for (int i = 0; i < numThreads; i++) {
+            try {
+                scoringThreads[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
+
     }
+
 
     private class IndexerThread implements Runnable {
         private int totalNoWordsInADocument = 0;
@@ -169,6 +164,38 @@ public class IndexerService {
             System.out.println("Word Frequency" + wordFrequency);
             System.out.println("Inverted index " + invertedIndex);
         }
+    }
+    private class ScoringThread implements  Runnable{
+        private List<String> invertedIndexWordsList;
+        public ScoringThread(List<String> invertedIndexWordsList){
+            this.invertedIndexWordsList=invertedIndexWordsList;
+        }
+       public void run() {
+            String word, documentName;
+            HashMap<String, ArrayList<Double>> innerMap;
+            double IDF, TF;
+            for (String invertedIndexWord : invertedIndexWordsList) {
+                word = invertedIndexWord;
+
+                innerMap = invertedIndex.get(word);
+                IDF = Math.log(totalNoOfPages / (double) innerMap.size());
+                for (Map.Entry<String, ArrayList<Double>> document : innerMap.entrySet()) {
+                    documentName = document.getKey();
+                    TF = document.getValue().get(0);
+                    invertedIndex.get(word).get(documentName).set(0, TF * IDF);
+                }
+
+                Optional<Word> existingWord = wordRepository.findByword(word);
+                if (existingWord.isPresent()) {
+                    existingWord.get().setTF_IDFandOccurrences(invertedIndex.get(word));
+                    wordRepository.save(existingWord.get());
+                } else {
+                    Word wordInDB = Word.builder().word(word).TF_IDFandOccurrences(invertedIndex.get(word)).build();
+                    wordRepository.save(wordInDB);
+                }
+            }
+        }
+
     }
 }
 
