@@ -20,31 +20,27 @@ public class SearchQueryService {
     }
 
     public String normalizeQuery(String query) {
-        //trim the query to remove leading and trailing whitespaces
         query = query.trim();
-        //replace multiple whitespaces with a single space
         query = query.replaceAll("\\s+", " ");
-        //convert the query to lowercase
         query = query.toLowerCase();
-        //return the normalized query
         return query;
     }
 
-    public SearchQuery saveSearchQuery(String query) {
+    public void saveSearchQuery(String query) {
         String normalizedQuery = normalizeQuery(query);
         Optional<SearchQuery> existingSearchQuery = searchQueryRepository.findSearchQueryByQuery(normalizedQuery);
         if(existingSearchQuery.isPresent()){
             existingSearchQuery.get().setPopularity(existingSearchQuery.get().getPopularity() + 1);
-            return searchQueryRepository.save(existingSearchQuery.get());
+            searchQueryRepository.save(existingSearchQuery.get());
+            return;
         }
         SearchQuery searchQuery = SearchQuery.builder().query(normalizedQuery).popularity(1L).build();
-        return searchQueryRepository.save(searchQuery);
+        searchQueryRepository.save(searchQuery);
     }
 
     public List<SearchQuery> findPopularQueriesByText(String text) {
-        //create a PageRequest with page number 0, page size 10 and sort by popularity descending
         PageRequest pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "popularity"));
-        //use the pageRequest as the pageable argument
-        return searchQueryRepository.findByQueryTextRegex(text, pageRequest).getContent();
+        String regexString = "^" + text;
+        return searchQueryRepository.findByQueryTextRegex(regexString, pageRequest).getContent();
     }
 }
