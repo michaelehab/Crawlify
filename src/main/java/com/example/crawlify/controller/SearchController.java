@@ -1,5 +1,6 @@
 package com.example.crawlify.controller;
 
+import com.example.crawlify.model.SearchQuery;
 import com.example.crawlify.model.Word;
 import com.example.crawlify.service.PageRankerService;
 import com.example.crawlify.service.PhraseSearcherService;
@@ -21,11 +22,13 @@ import java.util.regex.Pattern;
 public class SearchController {
     private final PageRankerService pageRankerService;
     private final PhraseSearcherService phraseSearcherService;
+    private final SearchQueryController searchQueryController;
 
     @Autowired
-    public SearchController(PageRankerService pageRankerService, PhraseSearcherService phraseSearcherService) {
+    public SearchController(PageRankerService pageRankerService, PhraseSearcherService phraseSearcherService, SearchQueryController searchQueryController) {
         this.pageRankerService = pageRankerService;
         this.phraseSearcherService = phraseSearcherService;
+        this.searchQueryController = searchQueryController;
     }
 
     @GetMapping
@@ -80,6 +83,10 @@ public class SearchController {
             }
         }
 
+        for(String string : strings){
+            searchQueryController.createQuery(string);
+        }
+
         List<Word> relevantWords = phraseSearcherService.startProcessing(strings, operation);
         ResultsResponse searchResults = pageRankerService.startRanking(relevantWords, strings, pageNumber);
         long endTime = System.nanoTime ();
@@ -92,5 +99,17 @@ public class SearchController {
         }
 
         return new ResponseEntity<>(searchResults, HttpStatus.OK);
+    }
+
+    @GetMapping("/{text}")
+    public List<SearchQuery> getQueriesByText(@PathVariable String text, @RequestParam("ie") String ie) throws UnsupportedEncodingException {
+        String searchQuery;
+        if (ie.equals("UTF-8")){
+            searchQuery = java.net.URLDecoder.decode(text, StandardCharsets.UTF_8);
+            return searchQueryController.getQueriesByText(searchQuery);
+        }
+        else{
+            throw new UnsupportedEncodingException();
+        }
     }
 }
