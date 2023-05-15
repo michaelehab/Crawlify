@@ -4,8 +4,9 @@ import com.example.crawlify.model.Page;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface PageRepository extends MongoRepository<Page, String> {
-    Page findByCanonicalUrl(String canonicalUrl);
-    Page findByUrl(String URL);
+    Optional<Page> findByCanonicalUrl(String canonicalUrl);
 }

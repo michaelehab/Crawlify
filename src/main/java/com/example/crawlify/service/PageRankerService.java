@@ -47,16 +47,18 @@ public class PageRankerService {
         }
     }
     private void calculatePageFinalTotalScore(){
-        Page page;
+        Optional<Page> page;
         int pagePopularity;
         double pageFinalScore,pageTF_IDF;
         for(Map.Entry<String,Double>pairOfURLAndTF_IDF : pageTF_IDFScoreHashMap.entrySet()){
             pageTF_IDF = pairOfURLAndTF_IDF.getValue();
             page = pageRepository.findByCanonicalUrl(pairOfURLAndTF_IDF.getKey());
-            pagePopularity = page.getPopularity();
-            pageFinalScore = (pagePopularity*pageTF_IDF)/(pagePopularity+pageTF_IDF);
-            Pair<String,Double> pair = new Pair<>(pairOfURLAndTF_IDF.getKey(),pageFinalScore);
-            sortedPageFinalScore.add(pair);
+            if(page.isPresent()){
+                pagePopularity = page.get().getPopularity();
+                pageFinalScore = (pagePopularity*pageTF_IDF)/(pagePopularity+pageTF_IDF);
+                Pair<String,Double> pair = new Pair<>(pairOfURLAndTF_IDF.getKey(),pageFinalScore);
+                sortedPageFinalScore.add(pair);
+            }
         }
     }
     private void sortPagesByFinalScore(){
@@ -76,13 +78,15 @@ public class PageRankerService {
         int endIndex = Math.min(startIndex + 10, sortedPageFinalScore.size()); // The index of the last result to return
         for(int i = startIndex; i < endIndex; i++) {
             Pair<String,Double> pair = sortedPageFinalScore.get(i);
-            Page resultPage = pageRepository.findByCanonicalUrl(pair.getKey());
-            String snippet = SnippetGenerator.generateSnippet(resultPage.getHtml(), queries);
-            if(!snippet.isEmpty()){
-                searchResults.add(new SearchResult(resultPage.getTitle(), resultPage.getUrl(), snippet));
-            }
-            else{
-                endIndex = Math.min(endIndex + 1, sortedPageFinalScore.size());
+            Optional<Page> resultPage = pageRepository.findByCanonicalUrl(pair.getKey());
+            if(resultPage.isPresent()){
+                String snippet = SnippetGenerator.generateSnippet(resultPage.get().getHtml(), queries);
+                if(!snippet.isEmpty()){
+                    searchResults.add(new SearchResult(resultPage.get().getTitle(), resultPage.get().getUrl(), snippet));
+                }
+                else{
+                    endIndex = Math.min(endIndex + 1, sortedPageFinalScore.size());
+                }
             }
         }
 

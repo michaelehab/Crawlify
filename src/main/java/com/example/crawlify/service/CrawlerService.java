@@ -63,7 +63,7 @@ public class CrawlerService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        System.out.println("Successfully Crawled " + numOfCrawledPages.get() + " pages");
+        System.out.println("Successfully Crawled " + numOfCrawledPages.get() + " pages and we have " + urlsToVisit.size() + " pages in the queue");
     }
 
     private class CrawlerThread implements Runnable {
@@ -99,9 +99,15 @@ public class CrawlerService {
                     // Check if URL has already been visited
                     if (visitedUrls.putIfAbsent(canonicalUrl, true) != null) {
                         System.out.println("Met page " + canonicalUrl + " again!");
-                        Page existingWebpage = pageRepository.findByCanonicalUrl(canonicalUrl);
-                        existingWebpage.setPopularity(existingWebpage.getPopularity() + 1);
-                        pageRepository.save(existingWebpage);
+                        Optional<Page> existingWebpage = pageRepository.findByCanonicalUrl(canonicalUrl);
+                        // Check if existingWebpage is null
+                        if (existingWebpage.isPresent()) {
+                            existingWebpage.get().setPopularity(existingWebpage.get().getPopularity() + 1);
+                            pageRepository.save(existingWebpage.get());
+                        } else {
+                            // If the page is not present in the database for any reason
+                            System.err.println("Page with url: " + canonicalUrl + " met before but not in DB");
+                        }
                         continue;
                     }
 
@@ -129,6 +135,7 @@ public class CrawlerService {
                         }
 
                         pageRepository.save(page);
+                        visitedUrls.put(canonicalUrl, true);
                         numOfCrawledPages.getAndIncrement();
 
                         // Enqueue links to visit
