@@ -31,7 +31,8 @@ public class IndexerService {
 
     public void startIndexing(){
         List<Page> pageList = pageRepository.findUnindexedPages();
-        totalNoOfPages=pageList.size();
+        totalNoOfPages = pageList.size();
+        System.out.println("Started Indexing " + totalNoOfPages + " pages");
         if(pageList.isEmpty()) return;
 
         Thread[] threads = new Thread[numThreads];
@@ -54,15 +55,16 @@ public class IndexerService {
 
         Thread[] scoringThreads = new Thread[numThreads];
 
+        ArrayList<String> invertedIndexWords = new ArrayList<>(invertedIndex.keySet());
 
         for (int i = 0; i < numThreads; i++) {
-            ArrayList<String> invertedIndexWords = new ArrayList<>(invertedIndex.keySet());
             int start = i * invertedIndexWords.size() / numThreads;
             int end = (i + 1) * invertedIndexWords.size() / numThreads;
             scoringThreads[i] = new Thread(new ScoringThread(invertedIndexWords.subList(start, end)));
             scoringThreads[i].setName(Integer.toString(i));
             scoringThreads[i].start();
         }
+
         for (int i = 0; i < numThreads; i++) {
             try {
                 scoringThreads[i].join();
@@ -70,7 +72,6 @@ public class IndexerService {
                 e.printStackTrace();
             }
         }
-
     }
 
 

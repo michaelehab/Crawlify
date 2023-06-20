@@ -40,7 +40,7 @@ public class RobotsChecker {
             String line = command.trim();
             if (line.startsWith("User-agent:")) {
                 userAgentStatus = line.contains("*");
-            } else if (line.startsWith("Disallow:") && userAgentStatus) {
+            } else if (line.startsWith("+:") && userAgentStatus) {
                 if (line.length() >= 11) {
                     try {
                         String disallowedDirectories = line.substring(10).trim();
