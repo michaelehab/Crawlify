@@ -1,6 +1,6 @@
 ![Crawlify](https://user-images.githubusercontent.com/29122581/231251576-d5e0b63d-ba09-4ba7-9c5f-806985578363.png)
 
-Crawlify is a simple crawler-based search engine that demonstrates the main features of a search engine (web crawling, indexing and ranking) and the interaction between them. It is implemented using Java, Spring Boot, TypeScript and Angular.
+Crawlify is a simple crawler-based search engine that demonstrates the main features of a search engine (web crawling, indexing and ranking) and the interaction between them. It is implemented using Java, Spring Boot, TypeScript and React JS.
 
 ## Features
 
