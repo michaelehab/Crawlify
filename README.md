@@ -100,3 +100,9 @@ This endpoint returns a response with a status indicating whether the crawling p
 This endpoint returns a response with a message indicating whether the indexing process started successfully or not.
 
 - You can use the search engine by entering a query in the search box and clicking on “Search”. You will see a list of relevant documents ranked by their combined score. You can also see some search suggestions based on your query terms.
+
+## Screenshots
+![Crawlify Search](https://github.com/michaelehab/Crawlify/assets/29122581/1377a9bd-22e4-4ee3-b7da-bab6b0119121)
+![Crawlify Autocomplete](https://github.com/michaelehab/Crawlify/assets/29122581/ca88691a-a6be-4a7a-89eb-72b2610598df)
+
+
