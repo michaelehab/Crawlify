@@ -12,14 +12,14 @@ The crawler visits HTML pages from a list of seed URLs and downloads them to a l
 
 The indexer reads the downloaded HTML files and extracts the terms and their frequencies. It also calculates the document frequency and inverse document frequency for each term. The indexer uses a scoring thread to assign a score to each document based on the term frequencies and other factors. The indexer stores the index in a file for later retrieval.
 
-## Query Processor:
+### Query Processor:
 
 This module receives search queries, performs necessary preprocessing and searches the index for relevant documents. It also supports phrase searching with quotation marks.
 
-## Phrase Searching:
+### Phrase Searching:
 
 Search engines will generally search for words as phrases when quotation marks are placed around the
-phrase. Results obtained when searching for a sentence with quotation marks around them should be a subset of the results obtained when searching for the same sentence without the quotation marks.
+phrase. Results obtained when searching for a sentence with quotation marks around them should be a subset of the results obtained when searching for the same sentence without quotation marks.
 Note that: results obtained from phrase searching with quotation marks, should return only the webpages
 having a sentence with the same order of words.
 
@@ -36,7 +36,7 @@ The ranker module sorts documents based on their popularity and relevance to the
    Popularity is a measure for the importance of any web page regardless the requested query. You can
    use pagerank algorithm or other ranking algorithms to calculate each page popularity.
 
-## Web Interface:
+### Web Interface:
 
 This module provides a web interface for Crawlify using React JS. It allows the user to enter search queries and see the results with snippets, scores and pagination. It also provides interactive search suggestions based on previous queries.
 
